@@ -379,11 +379,11 @@ class ZXSpectrum
 		int32_t intEnabledAt;
 		int32_t tCount;
 		void* pRegisters[8];
-		void* pPair[5];
+		void* pPairs[5];
 		void* pDDRegisters[8];
-		void* pDDPair[5];
+		void* pDDPairs[5];
 		void* pFDRegisters[8];
-		void* pFDPair[5];
+		void* pFDPairs[5];
 	} m_Z80Processor;
 	struct Tape
 	{

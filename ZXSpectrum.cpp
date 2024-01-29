@@ -227,7 +227,7 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 void ZXSpectrum::stepZ80()
 {
 	void** pRegisters = m_Z80Processor.pRegisters;
-	void** pddPair = m_Z80Processor.pddPair;
+	void** pPair = m_Z80Processor.pPair;
 	contendedAccess(PC, 4);
 	uint8_t opcode = m_pZXMemory[PC];
 	PC++; R++;
@@ -300,7 +300,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				contendedAccess(m_Z80Processor.memptr.w, 1);
 				INC8(bytetemp);
@@ -328,7 +328,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				contendedAccess(m_Z80Processor.memptr.w, 1);
 				DEC8(bytetemp);
@@ -361,11 +361,11 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				(*(uint8_t*)(m_Z80Processor.pRegisters[r(opcode)])) = readMem(m_Z80Processor.memptr.w);
 			}
 			else
-				(*(uint8_t*)(pRegisters[r(opcode)])) = readMem((*(uint16_t*)(pddPair[HL_IX_IY_INDEX])));
+				(*(uint8_t*)(pRegisters[r(opcode)])) = readMem((*(uint16_t*)(pPair[HL_IX_IY_INDEX])));
 			break;
 		}
 		case LD_INDIRECT_HL_R:				/*!*/
@@ -376,11 +376,11 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
 			}
 			else
-				writeMem((*(uint16_t*)(pddPair[HL_IX_IY_INDEX])), (*(uint8_t*)(pRegisters[r_(opcode)])));
+				writeMem((*(uint16_t*)(pPair[HL_IX_IY_INDEX])), (*(uint8_t*)(pRegisters[r_(opcode)])));
 			break;
 		}
 		case HALT:
@@ -408,7 +408,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				ADD(bytetemp);
 			}
@@ -438,7 +438,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				ADC(bytetemp);
 			}
@@ -468,7 +468,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				SUB(bytetemp);
 			}
@@ -498,7 +498,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				SBC(bytetemp);
 			}
@@ -528,7 +528,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				AND(bytetemp);
 			}
@@ -558,7 +558,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				XOR(bytetemp);
 			}
@@ -588,7 +588,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				OR(bytetemp);
 			}
@@ -625,7 +625,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
 				contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
 				CP(bytetemp);
 			}
@@ -640,7 +640,7 @@ void ZXSpectrum::stepZ80()
 		{
 			uint8_t index = dd(opcode);
 			if (index == 3) index++;
-			uint16_t tempword = (*(uint16_t*)(pddPair[index]));
+			uint16_t tempword = (*(uint16_t*)(pPair[index]));
 			contendedAccess(IR, 1);
 			PUSH16(tempword & 0xFF, tempword >> 8);
 			break;
@@ -649,32 +649,32 @@ void ZXSpectrum::stepZ80()
 		{
 			uint8_t index = dd(opcode);
 			if (index == 3) index++;
-			POP16((*(uint8_t*)(pddPair[index])), (*((uint8_t*)(pddPair[index]) + 1)));
+			POP16((*(uint8_t*)(pPair[index])), (*((uint8_t*)(pPair[index]) + 1)));
 			break;
 		}
 		case INC_RR:						/*!*/
 		{
 			contendedAccess(IR, 1); contendedAccess(IR, 1);
-			(*(uint16_t*)(pddPair[dd(opcode)]))++;
+			(*(uint16_t*)(pPair[dd(opcode)]))++;
 			break;
 		}
 		case DEC_RR:						/*!*/
 		{
 			contendedAccess(IR, 1); contendedAccess(IR, 1);
-			(*(uint16_t*)(pddPair[dd(opcode)]))--;
+			(*(uint16_t*)(pPair[dd(opcode)]))--;
 			break;
 		}
 		case ADD_HL_RR:						/*!*/
 		{
 			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
 			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			ADD16((*(uint16_t*)(pddPair[HL_IX_IY_INDEX])), (*(uint16_t*)(pddPair[dd(opcode)])));
+			ADD16((*(uint16_t*)(pPair[HL_IX_IY_INDEX])), (*(uint16_t*)(pPair[dd(opcode)])));
 			break;
 		}
 		case LD_RR_NN:						/*!*/
 		{
-			(*(uint8_t*)(pddPair[dd(opcode)])) = readMem(PC++);
-			(*((uint8_t*)(pddPair[dd(opcode)]) + 1)) = readMem(PC++);
+			(*(uint8_t*)(pPair[dd(opcode)])) = readMem(PC++);
+			(*((uint8_t*)(pPair[dd(opcode)]) + 1)) = readMem(PC++);
 			break;
 		}
 		case RET:
@@ -798,7 +798,7 @@ void ZXSpectrum::stepZ80()
 		case LD_SP_HL:						/*!*/
 		{
 			contendedAccess(IR, 1); contendedAccess(IR, 1);
-			SP = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX]));
+			SP = (*(uint16_t*)(pPair[HL_IX_IY_INDEX]));
 			break;
 		}
 		case LD_INDIRECT_NN_HL:				/*!*/
@@ -861,7 +861,7 @@ void ZXSpectrum::stepZ80()
 				uint8_t value = readMem(PC);
 				contendedAccess(PC, 1); contendedAccess(PC, 1);
 				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)offset;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)offset;
 				writeMem(m_Z80Processor.memptr.w, value);
 			}
 			else
@@ -912,7 +912,7 @@ void ZXSpectrum::stepZ80()
 		}
 		case JP_HL:							/*!*/
 		{
-			PC = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX]));
+			PC = (*(uint16_t*)(pPair[HL_IX_IY_INDEX]));
 			break;
 		}
 		case OUT_N_A:
@@ -1315,25 +1315,25 @@ void ZXSpectrum::stepZ80()
 		{
 			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
 			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			SBC16((*(uint16_t*)(pddPair[dd(opcode)])));
+			SBC16((*(uint16_t*)(pPair[dd(opcode)])));
 			break;
 		}
 		case ADC_HL_RR:
 		{
 			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
 			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			ADC16((*(uint16_t*)(pddPair[dd(opcode)])));
+			ADC16((*(uint16_t*)(pPair[dd(opcode)])));
 			break;
 			break;
 		}
 		case LD_INDIRECT_NN_RR:				/*!*/
 		{
-			LD16_NNRR((*(uint8_t*)(pddPair[dd(opcode)])), (*((uint8_t*)(pddPair[dd(opcode)]) + 1)));
+			LD16_NNRR((*(uint8_t*)(pPair[dd(opcode)])), (*((uint8_t*)(pPair[dd(opcode)]) + 1)));
 			break;
 		}
 		case LD_RR_INDIRECT_NN:				/*!*/
 		{
-			LD16_RRNN((*(uint8_t*)(pddPair[dd(opcode)])), (*((uint8_t*)(pddPair[dd(opcode)]) + 1)));
+			LD16_RRNN((*(uint8_t*)(pPair[dd(opcode)])), (*((uint8_t*)(pPair[dd(opcode)]) + 1)));
 			break;
 		}
 		case NEG:
@@ -1598,20 +1598,19 @@ void ZXSpectrum::stepZ80()
 			if (pRegisters != m_Z80Processor.pRegisters)
 			{
 				contendedAccess(PC, 3);
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pddPair[HL_IX_IY_INDEX])) + (int8_t)m_pZXMemory[PC];
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPair[HL_IX_IY_INDEX])) + (int8_t)m_pZXMemory[PC];
 				PC++;
 				contendedAccess(PC, 3);
 				opcode = m_pZXMemory[PC];;
-				instruction = CB_INSTRUCTION_TABLE[opcode];
 				contendedAccess(PC, 1); contendedAccess(PC, 1);
 			}
 			else
 			{
 				contendedAccess(PC, 4);
 				opcode = m_pZXMemory[PC];
-				instruction = CB_INSTRUCTION_TABLE[opcode];
 				R++;
 			}
+			instruction = CB_INSTRUCTION_TABLE[opcode];
 			PC++;
 			repeatLoop = true;
 			break;
@@ -1626,7 +1625,7 @@ void ZXSpectrum::stepZ80()
 				PC++;
 				R++;
 				pRegisters = m_Z80Processor.pDDRegisters;
-				pddPair = m_Z80Processor.pddDDPair;
+				pPair = m_Z80Processor.pDDPair;
 				repeatLoop = true;
 			}
 			else
@@ -1645,7 +1644,7 @@ void ZXSpectrum::stepZ80()
 				PC++;
 				R++;
 				pRegisters = m_Z80Processor.pFDRegisters;
-				pddPair = m_Z80Processor.pddFDPair;
+				pPair = m_Z80Processor.pFDPair;
 				repeatLoop = true;
 			}
 			else
@@ -1667,10 +1666,12 @@ bool ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 	for (uint8_t i = 0; i < 2; i++) m_pScreenBuffer[i] = m_pDisplayInstance->getBuffer(i);
 	m_pInPort = pKeyboardInstance->getBuffer();
 	if ((m_pZXMemory = (uint8_t*)malloc(65536)) == NULL) { printf("Error allocating ZXMemory"); return false; }
+#ifdef CONT_TABLE
 	if ((m_pContendTable = (uint8_t*)malloc(42910)) == NULL) { printf("Error allocating contended access table"); return false; }
 	memset(m_pContendTable, 0, 42910);
 	uint8_t contPattern[] = { 6, 5, 4, 3, 2, 1, 0, 0 };
 	for (uint32_t i = 0; i < 42910; i++) m_pContendTable[i] = (((i % 224) > 127) ? 0 : contPattern[(i % 224) % 8]);
+#endif // CONT_TABLE
 	if (!loadROMFile(romFile)) return false;
 	m_initComplete = true;
 	return m_initComplete;
@@ -1703,11 +1704,11 @@ void ZXSpectrum::resetZ80()
 	m_Z80Processor.pRegisters[4] = &H; m_Z80Processor.pDDRegisters[4] = &IXH; m_Z80Processor.pFDRegisters[4] = &IYH;
 	m_Z80Processor.pRegisters[5] = &L; m_Z80Processor.pDDRegisters[5] = &IXL; m_Z80Processor.pFDRegisters[5] = &IYL;
 	m_Z80Processor.pRegisters[7] = m_Z80Processor.pDDRegisters[7] = m_Z80Processor.pFDRegisters[7] = &A;
-	m_Z80Processor.pddPair[0] = m_Z80Processor.pddDDPair[0] = m_Z80Processor.pddFDPair[0] = &BC;
-	m_Z80Processor.pddPair[1] = m_Z80Processor.pddDDPair[1] = m_Z80Processor.pddFDPair[1] = &DE;
-	m_Z80Processor.pddPair[2] = &HL; m_Z80Processor.pddDDPair[2] = &IX; m_Z80Processor.pddFDPair[2] = &IY;
-	m_Z80Processor.pddPair[3] = m_Z80Processor.pddDDPair[3] = m_Z80Processor.pddFDPair[3] = &SP;
-	m_Z80Processor.pddPair[4] = m_Z80Processor.pddDDPair[4] = m_Z80Processor.pddFDPair[4] = &AF;
+	m_Z80Processor.pPair[0] = m_Z80Processor.pDDPair[0] = m_Z80Processor.pFDPair[0] = &BC;
+	m_Z80Processor.pPair[1] = m_Z80Processor.pDDPair[1] = m_Z80Processor.pFDPair[1] = &DE;
+	m_Z80Processor.pPair[2] = &HL; m_Z80Processor.pDDPair[2] = &IX; m_Z80Processor.pFDPair[2] = &IY;
+	m_Z80Processor.pPair[3] = m_Z80Processor.pDDPair[3] = m_Z80Processor.pFDPair[3] = &SP;
+	m_Z80Processor.pPair[4] = m_Z80Processor.pDDPair[4] = m_Z80Processor.pFDPair[4] = &AF;
 }
 
 void ZXSpectrum::loopZ80()
@@ -1818,3 +1819,12 @@ void ZXSpectrum::restoreState(const char* pFileName)
 	storeFile.close();
 	LittleFS.end();
 }
+
+#ifndef CONT_TABLE
+void ZXSpectrum::contendedAccess(uint16_t address, int32_t time)
+{
+	m_Z80Processor.tCount += time;
+	if (m_Z80Processor.tCount < 14335 || m_Z80Processor.tCount > 57244 || (address & 0xC000) != 0x4000) return;
+	m_Z80Processor.tCount += m_pContendTable[(m_Z80Processor.tCount - 14335) % 224];
+}
+#endif // !CONT_TABLE

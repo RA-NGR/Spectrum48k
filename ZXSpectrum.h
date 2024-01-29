@@ -369,11 +369,11 @@ class ZXSpectrum
 		int32_t intEnabledAt;
 		int32_t tCount;
 		void* pRegisters[8];
-		void* pddPair[5];
+		void* pPair[5];
 		void* pDDRegisters[8];
-		void* pddDDPair[5];
+		void* pDDPair[5];
 		void* pFDRegisters[8];
-		void* pddFDPair[5];
+		void* pFDPair[5];
 	} m_Z80Processor;
 	struct Tape
 	{
@@ -411,7 +411,11 @@ class ZXSpectrum
 	uint8_t m_frameCounter = 0;
 	uint8_t* m_pZXMemory;
 	uint16_t* m_pScreenBuffer[2];
+#ifdef CONT_TABLE
 	uint8_t* m_pContendTable;
+#else
+	void contendedAccess(uint16_t address, int32_t time);
+#endif // CONT_TABLE
 	bool m_initComplete = false;
 	int16_t m_scanLine = -1;
 	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;
@@ -437,7 +441,7 @@ class ZXSpectrum
 			uint8_t unused : 7;
 		};
 		uint8_t rawData;
-	} m_emulSettings = { 0x00 };
+	} m_emulSettings = { 0x01 };
 	bool m_soundEnabled = true;
 	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
 	int8_t intZ80();

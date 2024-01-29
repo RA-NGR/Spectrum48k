@@ -14,8 +14,6 @@
 
 #define DBG
 #define CONT_TABLE
-//#define Z80_BIG_ENDIAN
-#//define Z80_HANDLE_SELF_MODIFYING_CODE
 
 #define TFT_WR   20		/* Write strobe pin */
 #define TFT_DC   21		/* Data Command control pin */

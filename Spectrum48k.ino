@@ -135,7 +135,12 @@ void loop()
 		{
 			g_zxEmulator.restoreState("/save"); delay(500);
 		}
-		if (fKeys == 0x18) g_zxEmulator.resetZ80();
+		if (fKeys == 0x18)
+		{
+			delay(500);
+			g_zxEmulator.resetZ80();
+			DBG_PRINTF("Free mem: %d\n", rp2040.getFreeHeap());
+		}
 		if (fKeys == 0x10)
 		{
 			delay(500);

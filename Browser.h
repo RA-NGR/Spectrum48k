@@ -13,7 +13,7 @@ class Browser
 	int m_browseFrom, m_selectionPos, m_filesCount;
 	uint8_t bufferSwitch = 0;
 	String m_selectedFile = "";
-	bool m_soundOn = false, m_tapeTurbo = false;
+	bool m_soundOn = true, m_tapeTurbo = false;
 	uint8_t m_currRom = 0;
 	void drawChar(const uint8_t ch, uint8_t posX, uint16_t foreColor, uint16_t backColor);
 	void listFiles();

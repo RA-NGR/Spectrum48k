@@ -344,6 +344,16 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) XOR_CONDITION
 const uint8_t __attribute__((section(".time_critical." "tables"))) AND_CONDITION_TABLE[8] = { FLAG_Z, FLAG_Z, FLAG_C, FLAG_C, FLAG_P, FLAG_P, FLAG_S, FLAG_S };
 const uint8_t __attribute__((section(".time_critical." "tables"))) RST_TABLE[8] = { 0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38 };
 
+const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[224] = { 
+	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
+	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
+	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
+	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 class ZXSpectrum
 {
 	const uint16_t m_colorLookup[16] = { 0x0000, 0x1700, 0x00B8, 0x17B8, 0xE005, 0xF705, 0xE0BD, 0xF7BD,
@@ -411,11 +421,11 @@ class ZXSpectrum
 	uint8_t m_frameCounter = 0;
 	uint8_t* m_pZXMemory;
 	uint16_t* m_pScreenBuffer[2];
-#ifdef CONT_TABLE
-	uint8_t* m_pContendTable;
-#else
-	void contendedAccess(uint16_t address, int32_t time);
-#endif // CONT_TABLE
+//#ifdef CONT_TABLE
+//	uint8_t* m_pContendTable;
+//#else
+////	void __attribute__((section(".time_critical." "contendedAccess"))) contendedAccess(uint16_t address, int32_t time);
+//#endif // CONT_TABLE
 	bool m_initComplete = false;
 	int16_t m_scanLine = -1;
 	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;

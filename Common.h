@@ -13,7 +13,7 @@
 #include <SDFS.h>
 
 #define DBG
-#define CONT_TABLE
+//#define CONT_TABLE
 
 #define TFT_WR   20		/* Write strobe pin */
 #define TFT_DC   21		/* Data Command control pin */

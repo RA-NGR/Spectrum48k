@@ -70,7 +70,7 @@
 #define q(opcode)                                       (((opcode) >> 3) & 0x03)
 #define dd(opcode)                                      (((opcode) >> 4) & 0x03)
 
-#define CC(cc)                                          ((FL ^ XOR_CONDITION_TABLE[(cc)]) & AND_CONDITION_TABLE[(cc)])
+#define CC(cc)                                          ((FL ^ xorConditionTable[(cc)]) & andConditionTable[(cc)])
 
 #define INDIRECT_HL 0x06 
 
@@ -81,29 +81,29 @@
 #define contendedAccess(address, time)                  { if ((address & 0xC000) == 0x4000 && m_Z80Processor.tCount > 14334 && m_Z80Processor.tCount < 57245) m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - 14335) % 224]; m_Z80Processor.tCount += (time); }
 
 
-#define AND(value)                                      { A &= (value); FL = FLAG_H | m_sz53pTable[A]; Q = FL; }
+#define AND(value)                                      { A &= (value); FL = FLAG_H | sz53pTable[A]; Q = FL; }
 #define ADC(value)                                      { uint16_t adctemp = A + (value) + ( FL & FLAG_C ); uint8_t lookup = ((A & 0x88) >> 3) | (((value) & 0x88) >> 2) | ((adctemp & 0x88) >> 1); \
-                                                          A = adctemp; FL = (adctemp & 0x100 ? FLAG_C : 0) | m_halfcarryAddTable[lookup & 0x07] | m_overflowAddTable[lookup >> 4] | m_sz53Table[A]; \
+                                                          A = adctemp; FL = (adctemp & 0x100 ? FLAG_C : 0) | halfcarryAddTable[lookup & 0x07] | overflowAddTable[lookup >> 4] | sz53Table[A]; \
                                                           Q = FL; }
 #define ADC16(value)                                    { uint32_t add16temp= HL + (value) + (FL & FLAG_C); uint8_t lookup = ((HL & 0x8800) >> 11) | (((value) & 0x8800) >> 10) | \
                                                           ((add16temp & 0x8800) >>  9); m_Z80Processor.memptr.w = HL + 1; HL = add16temp; FL= (add16temp & 0x10000 ? FLAG_C : 0) | \
-                                                          m_overflowAddTable[lookup >> 4] | (H & (FLAG_3 | FLAG_5 | FLAG_S)) | m_halfcarryAddTable[lookup&0x07] | (HL ? 0 : FLAG_Z); Q = FL; }
+                                                          overflowAddTable[lookup >> 4] | (H & (FLAG_3 | FLAG_5 | FLAG_S)) | halfcarryAddTable[lookup&0x07] | (HL ? 0 : FLAG_Z); Q = FL; }
 #define ADD(value)                                      { uint16_t addtemp = A + (value); uint8_t lookup = ((A & 0x88) >> 3) | (((value) & 0x88) >> 2 ) | ((addtemp & 0x88) >> 1); A = addtemp; \
-                                                          FL = (addtemp & 0x100 ? FLAG_C : 0) | m_halfcarryAddTable[lookup & 0x07] | m_overflowAddTable[lookup >> 4] | m_sz53Table[A]; Q = FL; }
+                                                          FL = (addtemp & 0x100 ? FLAG_C : 0) | halfcarryAddTable[lookup & 0x07] | overflowAddTable[lookup >> 4] | sz53Table[A]; Q = FL; }
 #define ADD16(value1, value2)                           { uint32_t add16temp = (value1) + (value2); uint8_t lookup = (((value1) & 0x0800) >> 11) | (((value2) & 0x0800) >> 10 )| \
 			                                              ((add16temp & 0x0800) >>  9); m_Z80Processor.memptr.w = (value1) + 1; (value1) = add16temp; FL= (FL& (FLAG_V | FLAG_Z | FLAG_S)) | \
-                                                          (add16temp & 0x10000 ? FLAG_C : 0) | ((add16temp >> 8) & (FLAG_3 | FLAG_5)) | m_halfcarryAddTable[lookup]; Q = FL; }
+                                                          (add16temp & 0x10000 ? FLAG_C : 0) | ((add16temp >> 8) & (FLAG_3 | FLAG_5)) | halfcarryAddTable[lookup]; Q = FL; }
 #define BIT_REG(bit, value)                             { FL = (FL & FLAG_C) | FLAG_H | (value & (FLAG_3 | FLAG_5)); if (!((value) & (0x01 << (bit)))) FL |= FLAG_P | FLAG_Z; \
                                                           if ((bit) == 7 && (value) & 0x80) FL |= FLAG_S; Q = FL; }
 #define BIT_MEMPTR(bit, value)                          { FL = (FL & FLAG_C) | FLAG_H | (m_Z80Processor.memptr.b.h & (FLAG_3 | FLAG_5)); if (!((value) & (0x01 << (bit)))) FL|= FLAG_P | FLAG_Z; \
                                                           if ((bit) == 7 && (value) & 0x80) FL|= FLAG_S; Q = FL; }  
 #define CALL()                                          { contendedAccess(PC, 1); PC++; PUSH16(PCL, PCH); PC = m_Z80Processor.memptr.w; }
 #define CP(value)                                       { uint16_t cptemp = A - value; uint8_t lookup = ((A & 0x88) >> 3) | (((value) & 0x88) >> 2) | ((cptemp & 0x88) >> 1); \
-                                                          FL =  (cptemp & 0x100 ? FLAG_C : (cptemp ? 0 : FLAG_Z)) | FLAG_N | m_halfcarrySubTable[lookup & 0x07] | m_overflowSubTable[lookup >> 4] | \
+                                                          FL =  (cptemp & 0x100 ? FLAG_C : (cptemp ? 0 : FLAG_Z)) | FLAG_N | halfcarrySubTable[lookup & 0x07] | overflowSubTable[lookup >> 4] | \
                                                           (value & (FLAG_3 | FLAG_5)) | (cptemp & FLAG_S); Q = FL; }
-#define DEC8(value)                                     { FL = (FL & FLAG_C) | ((value) & 0x0F ? 0 : FLAG_H) | FLAG_N; (value)--; FL|= ((value) == 0x7F ? FLAG_V : 0) | m_sz53Table[value]; Q = FL; }
-#define INP(reg, port)                                  { m_Z80Processor.memptr.w = port + 1; (reg) = readPort((port)); FL= (FL & FLAG_C) | m_sz53pTable[(reg)]; Q = FL; }
-#define INC8(value)                                     { (value)++; FL= (FL& FLAG_C) | ((value)==0x80 ? FLAG_V : 0) | ((value)&0x0f ? 0 : FLAG_H) | m_sz53Table[(value)]; Q = FL; }
+#define DEC8(value)                                     { FL = (FL & FLAG_C) | ((value) & 0x0F ? 0 : FLAG_H) | FLAG_N; (value)--; FL|= ((value) == 0x7F ? FLAG_V : 0) | sz53Table[value]; Q = FL; }
+#define INP(reg, port)                                  { m_Z80Processor.memptr.w = port + 1; (reg) = readPort((port)); FL= (FL & FLAG_C) | sz53pTable[(reg)]; Q = FL; }
+#define INC8(value)                                     { (value)++; FL= (FL& FLAG_C) | ((value)==0x80 ? FLAG_V : 0) | ((value)&0x0f ? 0 : FLAG_H) | sz53Table[(value)]; Q = FL; }
 #define LD16_NNRR(regl, regh)                           { uint16_t ldtemp; ldtemp = readMem(PC++); ldtemp |= readMem(PC++) << 8; writeMem(ldtemp++, (regl)); m_Z80Processor.memptr.w = ldtemp;\
                                                           writeMem(ldtemp,(regh)); break; }
 #define LD16_RRNN(regl, regh)                           { uint16_t ldtemp; ldtemp = readMem(PC++); ldtemp |= readMem(PC++) << 8; (regl) = readMem(ldtemp++); m_Z80Processor.memptr.w=ldtemp;\
@@ -111,26 +111,26 @@
 #define JP()                                            { PC = m_Z80Processor.memptr.w; }
 #define JR()                                            { int8_t jrtemp = readMem(PC); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);\
                                                           PC += jrtemp; PC++; m_Z80Processor.memptr.w = PC; }
-#define OR(value)                                       { A |= (value); FL= m_sz53pTable[A]; Q = FL; }
+#define OR(value)                                       { A |= (value); FL= sz53pTable[A]; Q = FL; }
 #define POP16(regl, regh)                               { (regl) = readMem(SP++); (regh) = readMem(SP++); }
 #define PUSH16(regl, regh)                              { writeMem(--SP, (regh)); writeMem(--SP, (regl)); }
 #define RET()                                           { POP16(PCL, PCH); m_Z80Processor.memptr.w = PC; }
-#define RL(value)                                       { uint8_t rltemp = (value); (value) = ((value) << 1) | (FL& FLAG_C); FL= (rltemp >> 7) | m_sz53pTable[(value)]; Q = FL; }
-#define RLC(value)                                      { (value) = ((value) << 1) | ((value)>>7); FL= ((value) & FLAG_C) | m_sz53pTable[(value)]; Q = FL; }
-#define RR(value)                                       { uint8_t rrtemp = (value); (value) = ((value) >> 1 ) | (FL<< 7); FL= (rrtemp & FLAG_C) | m_sz53pTable[(value)]; Q = FL; }
-#define RRC(value)                                      { FL= (value) & FLAG_C; (value) = ((value) >> 1) | ((value) << 7); FL|= m_sz53pTable[(value)]; Q = FL; }
+#define RL(value)                                       { uint8_t rltemp = (value); (value) = ((value) << 1) | (FL& FLAG_C); FL= (rltemp >> 7) | sz53pTable[(value)]; Q = FL; }
+#define RLC(value)                                      { (value) = ((value) << 1) | ((value)>>7); FL= ((value) & FLAG_C) | sz53pTable[(value)]; Q = FL; }
+#define RR(value)                                       { uint8_t rrtemp = (value); (value) = ((value) >> 1 ) | (FL<< 7); FL= (rrtemp & FLAG_C) | sz53pTable[(value)]; Q = FL; }
+#define RRC(value)                                      { FL= (value) & FLAG_C; (value) = ((value) >> 1) | ((value) << 7); FL|= sz53pTable[(value)]; Q = FL; }
 #define RST(value)                                      { PUSH16(PCL, PCH); PC = (value); m_Z80Processor.memptr.w = PC; }
 #define SBC(value)                                      { uint16_t sbctemp = A - (value) - (FL& FLAG_C); uint8_t lookup = ((A & 0x88) >> 3) | (((value) & 0x88) >> 2) | ((sbctemp & 0x88) >> 1); \
-                                                          A = sbctemp; FL= (sbctemp & 0x100 ? FLAG_C : 0) | FLAG_N | m_halfcarrySubTable[lookup & 0x07] | m_overflowSubTable[lookup >> 4] | \
-                                                          m_sz53Table[A]; Q = FL; }
+                                                          A = sbctemp; FL= (sbctemp & 0x100 ? FLAG_C : 0) | FLAG_N | halfcarrySubTable[lookup & 0x07] | overflowSubTable[lookup >> 4] | \
+                                                          sz53Table[A]; Q = FL; }
 #define SBC16(value)                                    { uint32_t sub16temp = HL - (value) - (FL& FLAG_C); uint8_t lookup = ((HL & 0x8800) >> 11) | (((value) & 0x8800) >> 10) | \
                                                           ((sub16temp & 0x8800) >>  9); m_Z80Processor.memptr.w = HL + 1; HL = sub16temp; FL= (sub16temp & 0x10000 ? FLAG_C : 0) | FLAG_N | \
-                                                          m_overflowSubTable[lookup >> 4] | (H & (FLAG_3 | FLAG_5 | FLAG_S)) | m_halfcarrySubTable[lookup&0x07] | (HL ? 0 : FLAG_Z); Q = FL; }
-#define SLA(value)                                      { FL= (value) >> 7; (value) <<= 1; FL|= m_sz53pTable[(value)]; Q = FL; }
-#define SLL(value)                                      { FL= (value) >> 7;  (value) = ((value) << 1) | 0x01; FL|= m_sz53pTable[(value)]; Q = FL; }
-#define SRA(value)                                      { FL= (value) & FLAG_C; (value) = ((value) & 0x80) | ((value) >> 1); FL|= m_sz53pTable[(value)]; Q = FL; }
-#define SRL(value)                                      { FL= (value) & FLAG_C; (value) >>= 1; FL|= m_sz53pTable[(value)]; Q = FL; }
+                                                          overflowSubTable[lookup >> 4] | (H & (FLAG_3 | FLAG_5 | FLAG_S)) | halfcarrySubTable[lookup&0x07] | (HL ? 0 : FLAG_Z); Q = FL; }
+#define SLA(value)                                      { FL= (value) >> 7; (value) <<= 1; FL|= sz53pTable[(value)]; Q = FL; }
+#define SLL(value)                                      { FL= (value) >> 7;  (value) = ((value) << 1) | 0x01; FL|= sz53pTable[(value)]; Q = FL; }
+#define SRA(value)                                      { FL= (value) & FLAG_C; (value) = ((value) & 0x80) | ((value) >> 1); FL|= sz53pTable[(value)]; Q = FL; }
+#define SRL(value)                                      { FL= (value) & FLAG_C; (value) >>= 1; FL|= sz53pTable[(value)]; Q = FL; }
 #define SUB(value)                                      { uint16_t subtemp = A - (value); uint8_t lookup = ((A & 0x88) >> 3 ) | (((value) & 0x88) >> 2) | ((subtemp & 0x88) >> 1); A = subtemp; \
-                                                          FL= (subtemp & 0x100 ? FLAG_C : 0) | FLAG_N | m_halfcarrySubTable[lookup & 0x07] | m_overflowSubTable[lookup >> 4] |m_sz53Table[A]; Q = FL; }
-#define XOR(value)                                      { A ^= (value); FL= m_sz53pTable[A]; Q = FL; }
+                                                          FL= (subtemp & 0x100 ? FLAG_C : 0) | FLAG_N | halfcarrySubTable[lookup & 0x07] | overflowSubTable[lookup >> 4] |sz53Table[A]; Q = FL; }
+#define XOR(value)                                      { A ^= (value); FL= sz53pTable[A]; Q = FL; }
 #endif // !_ZXMACROS_H_

@@ -3,9 +3,9 @@
 ZXSpectrum::~ZXSpectrum()
 {
 	free(m_pZXMemory);
-#ifdef CONT_TABLE
-	free(m_pContendTable);
-#endif // CONT_TABLE
+//#ifdef CONT_TABLE
+//	free(m_pContendTable);
+//#endif // CONT_TABLE
 }
 
 void ZXSpectrum::drawLine(int posY)
@@ -235,7 +235,7 @@ void ZXSpectrum::stepZ80()
 	PC++; R++;
 	uint8_t last_Q = Q; /* keep Q value from previous opcode for SCF and CCF */
 	Q = 0; /* preempt Q value assuming next opcode doesn't set flags */
-	uint8_t instruction = INSTRUCTION_TABLE[opcode];
+	uint8_t instruction = instructionTable[opcode];
 	bool repeatLoop;
 	do
 	{
@@ -771,7 +771,7 @@ void ZXSpectrum::stepZ80()
 		case RST_P:
 		{
 			contendedAccess(IR, 1);
-			RST(RST_TABLE[r(opcode)]);
+			RST(rstTable[r(opcode)]);
 			break;
 		}
 		case EX_AF_AF_PRIME:
@@ -884,7 +884,7 @@ void ZXSpectrum::stepZ80()
 			{
 				ADD(add);
 			}
-			FL = (FL & ~(FLAG_C | FLAG_P)) | carry | m_parityTable[A];
+			FL = (FL & ~(FLAG_C | FLAG_P)) | carry | parityTable[A];
 			Q = FL;
 			break;
 		}
@@ -1283,7 +1283,7 @@ void ZXSpectrum::stepZ80()
 		{
 			contendedAccess(PC, 4);
 			opcode = m_pZXMemory[PC];
-			instruction = ED_INSTRUCTION_TABLE[opcode];
+			instruction = edInstructionTable[opcode];
 			PC++;
 			R++;
 			repeatLoop = true;
@@ -1365,7 +1365,7 @@ void ZXSpectrum::stepZ80()
 				writeMem(HL, (A << 4) | (bytetemp >> 4));
 				A = (A & 0xf0) | (bytetemp & 0x0f);
 			}
-			FL = (FL & FLAG_C) | m_sz53pTable[A];
+			FL = (FL & FLAG_C) | sz53pTable[A];
 			Q = FL;
 			m_Z80Processor.memptr.w = HL + 1;
 			break;
@@ -1386,7 +1386,7 @@ void ZXSpectrum::stepZ80()
 				A = I;
 			else
 				A = (R & 0x7f) | (R7 & 0x80);
-			FL = (FL & FLAG_C) | m_sz53Table[A] | (IFF2 ? FLAG_V : 0);
+			FL = (FL & FLAG_C) | sz53Table[A] | (IFF2 ? FLAG_V : 0);
 			Q = FL;
 			m_Z80Processor.iff2_read = 1;
 			break;
@@ -1430,7 +1430,7 @@ void ZXSpectrum::stepZ80()
 			else
 				HL--;
 			BC--;
-			FL = (FL & FLAG_C) | (BC ? (FLAG_V | FLAG_N) : FLAG_N) | m_halfcarrySubTable[lookup] | (bytetemp ? 0 : FLAG_Z) | (bytetemp & FLAG_S);
+			FL = (FL & FLAG_C) | (BC ? (FLAG_V | FLAG_N) : FLAG_N) | halfcarrySubTable[lookup] | (bytetemp ? 0 : FLAG_Z) | (bytetemp & FLAG_S);
 			if (FL & FLAG_H) bytetemp--;
 			FL |= (bytetemp & FLAG_3) | ((bytetemp & 0x02) ? FLAG_5 : 0);
 			Q = FL;
@@ -1455,7 +1455,7 @@ void ZXSpectrum::stepZ80()
 				initemp2 = initemp + C - 1;
 			}
 			B--;
-			FL = (initemp & 0x80 ? FLAG_N : 0) | ((initemp2 < initemp) ? FLAG_H | FLAG_C : 0) | (m_parityTable[(initemp2 & 0x07) ^ B] ? FLAG_P : 0) | m_sz53Table[B];
+			FL = (initemp & 0x80 ? FLAG_N : 0) | ((initemp2 < initemp) ? FLAG_H | FLAG_C : 0) | (parityTable[(initemp2 & 0x07) ^ B] ? FLAG_P : 0) | sz53Table[B];
 			Q = FL;
 			break;
 		}
@@ -1476,7 +1476,7 @@ void ZXSpectrum::stepZ80()
 			}
 			writePort(BC, outitemp);
 			uint8_t outitemp2 = outitemp + L;
-			FL = (outitemp & 0x80 ? FLAG_N : 0) | ((outitemp2 < outitemp) ? FLAG_H | FLAG_C : 0) | (m_parityTable[(outitemp2 & 0x07) ^ B] ? FLAG_P : 0) | m_sz53Table[B];
+			FL = (outitemp & 0x80 ? FLAG_N : 0) | ((outitemp2 < outitemp) ? FLAG_H | FLAG_C : 0) | (parityTable[(outitemp2 & 0x07) ^ B] ? FLAG_P : 0) | sz53Table[B];
 			Q = FL;
 			break;
 		}
@@ -1514,7 +1514,7 @@ void ZXSpectrum::stepZ80()
 			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
 			contendedAccess(HL, 1);
 			BC--;
-			FL = (FL & FLAG_C) | (BC ? (FLAG_V | FLAG_N) : FLAG_N) | m_halfcarrySubTable[lookup] | (bytetemp ? 0 : FLAG_Z) | (bytetemp & FLAG_S);
+			FL = (FL & FLAG_C) | (BC ? (FLAG_V | FLAG_N) : FLAG_N) | halfcarrySubTable[lookup] | (bytetemp ? 0 : FLAG_Z) | (bytetemp & FLAG_S);
 			if (FL & FLAG_H) bytetemp--;
 			FL |= (bytetemp & FLAG_3) | ((bytetemp & 0x02) ? FLAG_5 : 0);
 			Q = FL;
@@ -1552,7 +1552,7 @@ void ZXSpectrum::stepZ80()
 				initemp2 = initemp + C + 1;
 			else
 				initemp2 = initemp + C - 1;
-			FL = (initemp & 0x80 ? FLAG_N : 0) | ((initemp2 < initemp) ? FLAG_H | FLAG_C : 0) | (m_parityTable[(initemp2 & 0x07) ^ B] ? FLAG_P : 0) | m_sz53Table[B];
+			FL = (initemp & 0x80 ? FLAG_N : 0) | ((initemp2 < initemp) ? FLAG_H | FLAG_C : 0) | (parityTable[(initemp2 & 0x07) ^ B] ? FLAG_P : 0) | sz53Table[B];
 			Q = FL;
 			if (B)
 			{
@@ -1581,7 +1581,7 @@ void ZXSpectrum::stepZ80()
 			else
 				HL--;
 			outitemp2 = outitemp + L;
-			FL = (outitemp & 0x80 ? FLAG_N : 0) | ((outitemp2 < outitemp) ? FLAG_H | FLAG_C : 0) | (m_parityTable[(outitemp2 & 0x07) ^ B] ? FLAG_P : 0) | m_sz53Table[B];
+			FL = (outitemp & 0x80 ? FLAG_N : 0) | ((outitemp2 < outitemp) ? FLAG_H | FLAG_C : 0) | (parityTable[(outitemp2 & 0x07) ^ B] ? FLAG_P : 0) | sz53Table[B];
 			Q = FL;
 			if (B)
 			{
@@ -1612,7 +1612,7 @@ void ZXSpectrum::stepZ80()
 				opcode = m_pZXMemory[PC];
 				R++;
 			}
-			instruction = CB_INSTRUCTION_TABLE[opcode];
+			instruction = cbInstructionTable[opcode];
 			PC++;
 			repeatLoop = true;
 			break;
@@ -1621,7 +1621,7 @@ void ZXSpectrum::stepZ80()
 		{
 			contendedAccess(PC, 4);
 			opcode = m_pZXMemory[PC];
-			instruction = INSTRUCTION_TABLE[opcode];
+			instruction = instructionTable[opcode];
 			if (instruction <= CB_PREFIX)
 			{
 				PC++;
@@ -1640,7 +1640,7 @@ void ZXSpectrum::stepZ80()
 		{
 			contendedAccess(PC, 4);
 			opcode = m_pZXMemory[PC];
-			instruction = INSTRUCTION_TABLE[opcode];
+			instruction = instructionTable[opcode];
 			if (instruction <= CB_PREFIX)
 			{
 				PC++;

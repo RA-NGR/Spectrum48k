@@ -2,7 +2,6 @@
 #include "ZXSpectrum.h"
 #include "ZXPeripherals.h"
 #include "Browser.h"
-//#include "fonts.h"
 
 Display g_mainDisplay;
 Sound g_soundBeeper;
@@ -113,13 +112,6 @@ void loop()
 						break;
 					}
 			}
-			//if (zxKey == '&')
-			//{
-			//	String fileName = "/Games/";
-			//	while ((zxKey = Serial.read()) != -1) fileName += (char)zxKey;
-			//	selectedFile = fileName;
-			//	Serial.flush();
-			//}
 		}
 		g_zxEmulator.loopZ80();
 		uint8_t fKeys = g_mainKeyboard.getData(9);

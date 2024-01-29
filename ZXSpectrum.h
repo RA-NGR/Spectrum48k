@@ -131,7 +131,7 @@ enum {
 	ED_PREFIX,
 	ED_UNDEFINED
 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) INSTRUCTION_TABLE[256] = {
+const uint8_t __attribute__((section(".time_critical." "tables"))) instructionTable[256] = {
 	NOP, LD_RR_NN, LD_INDIRECT_BC_A, INC_RR, INC_R, DEC_R, LD_R_N, RLCA,																/* 0x00 - 0x07 */
 	EX_AF_AF_PRIME, ADD_HL_RR, LD_A_INDIRECT_BC, DEC_RR, INC_R, DEC_R, LD_R_N, RRCA,													/* 0x08 - 0x0F */
 	DJNZ_E, LD_RR_NN, LD_INDIRECT_DE_A, INC_RR, INC_R, DEC_R, LD_R_N, RLA,																/* 0x10 - 0x17 */
@@ -165,7 +165,7 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) INSTRUCTION_T
 	RET_CC, POP_SS, JP_CC_NN, DI, CALL_CC_NN, PUSH_SS, OR_N, RST_P,																		/* 0xF0 - 0xF7 */
 	RET_CC, LD_SP_HL, JP_CC_NN, EI, CALL_CC_NN, FD_PREFIX, CP_N, RST_P																	/* 0xF8 - 0xFF */
 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) CB_INSTRUCTION_TABLE[256] = {
+const uint8_t __attribute__((section(".time_critical." "tables"))) cbInstructionTable[256] = {
 	RLC_R, RLC_R, RLC_R, RLC_R, RLC_R, RLC_R, RLC_INDIRECT_HL, RLC_R,					/* 0x00 - 0x07 */
 	RRC_R, RRC_R, RRC_R, RRC_R, RRC_R, RRC_R, RRC_INDIRECT_HL, RRC_R,					/* 0x08 - 0x0F */
 	RL_R, RL_R, RL_R, RL_R, RL_R, RL_R, RL_INDIRECT_HL, RL_R,							/* 0x10 - 0x17 */
@@ -199,7 +199,7 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) CB_INSTRUCTIO
 	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_INDIRECT_HL, SET_B_R,	/* 0xF0 - 0xF7 */
 	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_INDIRECT_HL, SET_B_R,	/* 0xF8 - 0xFF */
 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) ED_INSTRUCTION_TABLE[256] = {
+const uint8_t __attribute__((section(".time_critical." "tables"))) edInstructionTable[256] = {
 	ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED,
 	ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED,
 	ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED,
@@ -234,11 +234,11 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) ED_INSTRUCTIO
 	ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED
 };
 
-const uint8_t __attribute__((section(".time_critical." "tables"))) m_halfcarryAddTable[8] = { 0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x10 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) m_halfcarrySubTable[8] = { 0x00, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x10 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) m_overflowAddTable[8] = { 0x00, 0x00, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) m_overflowSubTable[8] = { 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) m_sz53Table[256] = {
+const uint8_t __attribute__((section(".time_critical." "tables"))) halfcarryAddTable[8] = { 0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x10 };
+const uint8_t __attribute__((section(".time_critical." "tables"))) halfcarrySubTable[8] = { 0x00, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x10 };
+const uint8_t __attribute__((section(".time_critical." "tables"))) overflowAddTable[8] = { 0x00, 0x00, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00 };
+const uint8_t __attribute__((section(".time_critical." "tables"))) overflowSubTable[8] = { 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00 };
+const uint8_t __attribute__((section(".time_critical." "tables"))) sz53Table[256] = {
 	0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -272,7 +272,7 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) m_sz53Table[2
 	0xA0, 0xA0, 0xA0, 0xA0, 0xA0, 0xA0, 0xA0, 0xA0,
 	0xA8, 0xA8, 0xA8, 0xA8, 0xA8, 0xA8, 0xA8, 0xA8
 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) m_parityTable[256] = {
+const uint8_t __attribute__((section(".time_critical." "tables"))) parityTable[256] = {
 	0x04, 0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00,
 	0x00, 0x04, 0x04, 0x00, 0x04, 0x00, 0x00, 0x04,
 	0x00, 0x04, 0x04, 0x00, 0x04, 0x00, 0x00, 0x04,
@@ -306,7 +306,7 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) m_parityTable
 	0x04, 0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00,
 	0x00, 0x04, 0x04, 0x00, 0x04, 0x00, 0x00, 0x04
 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) m_sz53pTable[256] = {
+const uint8_t __attribute__((section(".time_critical." "tables"))) sz53pTable[256] = {
 	0x44, 0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00,
 	0x08, 0x0C, 0x0C, 0x08, 0x0C, 0x08, 0x08, 0x0C,
 	0x00, 0x04, 0x04, 0x00, 0x04, 0x00, 0x00, 0x04,
@@ -340,9 +340,9 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) m_sz53pTable[
 	0xA4, 0xA0, 0xA0, 0xA4, 0xA0, 0xA4, 0xA4, 0xA0,
 	0xA8, 0xAC, 0xAC, 0xA8, 0xAC, 0xA8, 0xA8, 0xAC
 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) XOR_CONDITION_TABLE[8] = { FLAG_Z, 0, FLAG_C, 0, FLAG_P, 0, FLAG_S, 0 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) AND_CONDITION_TABLE[8] = { FLAG_Z, FLAG_Z, FLAG_C, FLAG_C, FLAG_P, FLAG_P, FLAG_S, FLAG_S };
-const uint8_t __attribute__((section(".time_critical." "tables"))) RST_TABLE[8] = { 0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38 };
+const uint8_t __attribute__((section(".time_critical." "tables"))) xorConditionTable[8] = { FLAG_Z, 0, FLAG_C, 0, FLAG_P, 0, FLAG_S, 0 };
+const uint8_t __attribute__((section(".time_critical." "tables"))) andConditionTable[8] = { FLAG_Z, FLAG_Z, FLAG_C, FLAG_C, FLAG_P, FLAG_P, FLAG_S, FLAG_S };
+const uint8_t __attribute__((section(".time_critical." "tables"))) rstTable[8] = { 0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38 };
 
 const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[224] = { 
 	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,

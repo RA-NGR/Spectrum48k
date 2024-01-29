@@ -13,7 +13,6 @@
 #include <SDFS.h>
 
 #define DBG
-//#define CONT_TABLE
 
 #define TFT_WR   20		/* Write strobe pin */
 #define TFT_DC   21		/* Data Command control pin */
@@ -55,7 +54,7 @@
 #define KBD_CLOCK 1000
 #define SOUND_BUFFER_SIZE 1024
 
-#define ROMFILENAME "/BASIC82.rom"
+//#define ROMFILENAME "/BASIC82.rom"
 //#define ROMFILENAME "/BASIC90v1.rom"
 //#define ROMFILENAME "/BASIC90v2.rom"
 //#define ROMFILENAME "/BASIC91.rom"

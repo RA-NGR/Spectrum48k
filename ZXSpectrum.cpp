@@ -3,9 +3,6 @@
 ZXSpectrum::~ZXSpectrum()
 {
 	free(m_pZXMemory);
-//#ifdef CONT_TABLE
-//	free(m_pContendTable);
-//#endif // CONT_TABLE
 }
 
 void ZXSpectrum::drawLine(int posY)
@@ -1668,12 +1665,6 @@ bool ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 	for (uint8_t i = 0; i < 2; i++) m_pScreenBuffer[i] = m_pDisplayInstance->getBuffer(i);
 	m_pInPort = pKeyboardInstance->getBuffer();
 	if ((m_pZXMemory = (uint8_t*)malloc(65536)) == NULL) { printf("Error allocating ZXMemory"); return false; }
-//#ifdef CONT_TABLE
-//	if ((m_pContendTable = (uint8_t*)malloc(42910)) == NULL) { printf("Error allocating contended access table"); return false; }
-//	memset(m_pContendTable, 0, 42910);
-//	uint8_t contPattern[] = { 6, 5, 4, 3, 2, 1, 0, 0 };
-//	for (uint32_t i = 0; i < 42910; i++) m_pContendTable[i] = (((i % 224) > 127) ? 0 : contPattern[(i % 224) % 8]);
-//#endif // CONT_TABLE
 	if (!loadROMFile(romFile)) return false;
 	m_initComplete = true;
 	return m_initComplete;

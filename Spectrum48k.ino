@@ -20,14 +20,14 @@ enum systemMode g_sysMode = systemMode::modeEmulator;
 
 struct
 {
-	uint8_t tapBuffer[49153];
+	uint8_t *pTapBuffer;
 	uint16_t tapSize;
 	File tapFile;
 	bool tapActive;
 	int32_t tapePause;
 	String fileName;
 } g_zxTape = {
-		.tapBuffer = {0},
+		.pTapBuffer = 0,
 		.tapSize = 0,
 		.tapActive = false,
 		.tapePause = -1,
@@ -59,14 +59,23 @@ void setup()
 
 bool readTAPSection(File& file)
 {
+	free(g_zxTape.pTapBuffer); g_zxTape.pTapBuffer = NULL;
 	if (file.readBytes((char*)&g_zxTape.tapSize, 2) != 2) return false;
-	if (g_zxTape.tapSize > 49152)
+	if ((g_zxTape.pTapBuffer = (uint8_t*)malloc(g_zxTape.tapSize + 1)) == NULL)
 	{
-		DBG_PRINTLN("TAP section too big");
-		return false;
+		{
+			DBG_PRINTF("Error allocating %ld bytes\n", g_zxTape.tapSize);
+			return false;
+		}
+
 	}
-	g_zxTape.tapBuffer[g_zxTape.tapSize] = 0x00;
-	if (file.readBytes((char*)g_zxTape.tapBuffer, g_zxTape.tapSize) != g_zxTape.tapSize) return false;
+	//if (g_zxTape.tapSize > 49152)
+	//{
+	//	DBG_PRINTLN("TAP section too big");
+	//	return false;
+	//}
+	g_zxTape.pTapBuffer[g_zxTape.tapSize] = 0x00;
+	if (file.readBytes((char*)g_zxTape.pTapBuffer, g_zxTape.tapSize) != g_zxTape.tapSize) return false;
 	return true;
 }
 
@@ -85,11 +94,12 @@ void loop()
 				if (!readTAPSection(g_zxTape.tapFile))
 				{
 					g_zxTape.tapFile.close(); g_zxTape.tapActive = false;
+					free(g_zxTape.pTapBuffer); g_zxTape.pTapBuffer = NULL;
 					SD.end();
 				}
 				else
 				{
-					g_zxEmulator.startTape(g_zxTape.tapBuffer, g_zxTape.tapSize);
+					g_zxEmulator.startTape(g_zxTape.pTapBuffer, g_zxTape.tapSize);
 					g_zxTape.tapePause = -1;
 				}
 			}
@@ -140,6 +150,7 @@ void loop()
 			{
 				g_zxEmulator.stopTape();
 				g_zxTape.tapFile.close(); g_zxTape.tapActive = false; g_zxTape.tapePause = -1;
+				free(g_zxTape.pTapBuffer); g_zxTape.pTapBuffer = NULL;
 			}
 			else
 			{
@@ -148,7 +159,7 @@ void loop()
 					if (readTAPSection(g_zxTape.tapFile))
 					{
 						g_zxTape.tapActive = true; g_zxTape.tapePause = -1;
-						g_zxEmulator.startTape(g_zxTape.tapBuffer, g_zxTape.tapSize);
+						g_zxEmulator.startTape(g_zxTape.pTapBuffer, g_zxTape.tapSize);
 					}
 				}
 				else

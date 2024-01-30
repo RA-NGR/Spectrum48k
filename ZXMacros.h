@@ -75,10 +75,8 @@
 #define INDIRECT_HL 0x06 
 
 #define CONTENDED 0x4000
-//#ifdef CONT_TABLE
-//#define contendedAccess(address, time)                  { if ((address & 0xC000) == 0x4000 && m_Z80Processor.tCount > 14334 && m_Z80Processor.tCount < 57245) m_Z80Processor.tCount += m_pContendTable[m_Z80Processor.tCount - 14335]; m_Z80Processor.tCount += (time); }
-//#endif // CONT_TABLE
 #define contendedAccess(address, time)                  { if ((address & 0xC000) == 0x4000 && m_Z80Processor.tCount > 14334 && m_Z80Processor.tCount < 57245) m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - 14335) % 224]; m_Z80Processor.tCount += (time); }
+//#define contendedAccess(address, time)                  { if ((address & 0xC000) == 0x4000 && m_Z80Processor.tCount > 14334 && m_Z80Processor.tCount < 57245){ divmod_result_t result = hw_divider_divmod_s32(m_Z80Processor.tCount - 14335, 224); m_Z80Processor.tCount += contPattern[to_remainder_s32(result)];} m_Z80Processor.tCount += (time); }
 
 
 #define AND(value)                                      { A &= (value); FL = FLAG_H | sz53pTable[A]; Q = FL; }

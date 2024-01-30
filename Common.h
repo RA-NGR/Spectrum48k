@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include <pico/divider.h>
 #include "hardware/dma.h"
 #include "hardware/pio.h"
 #include "hardware/clocks.h"

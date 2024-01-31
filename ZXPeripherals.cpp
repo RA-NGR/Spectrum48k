@@ -9,7 +9,7 @@ Sound::~Sound()
 bool Sound::init()
 {
 	
-	m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(16);
+	m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(1);
 	pinMode(SND_PIN, OUTPUT);
 	digitalWriteFast(SND_PIN, 0);
 	return true;
@@ -25,16 +25,24 @@ void Sound::update()
 		{
 			int val = (ctrlData & 0x00FFFFFF);
 			if (ctrlData & 0x00800000) val |= 0xFF000000; // restore sign bit
-			m_ringBuffer[m_rbWrIndex] = val / ((SOUND_CLOCK / 8.0) * 28);
-			m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
+			//m_ringBuffer[m_rbWrIndex] = val / ((SOUND_CLOCK / 8.0) * 28);
+            m_ringBuffer[m_rbWrIndex] = val / 42;
+            m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
 		}
 	}
 }
 
 bool Sound::onTimer(struct repeating_timer* pTimer)
 {
-	static uint32_t soundBit = 0;
+	static uint32_t soundBit = 0/*, prevTimer = 0*/;
 	Sound* pInstance = (Sound*)pTimer->user_data;
+    //if (prevTimer)
+    //{
+    //    if (timer_hw->timerawl - prevTimer > 12) DBG_PRINTLN(timer_hw->timerawl - prevTimer);
+    //    prevTimer = timer_hw->timerawl;
+    //}
+    //else
+    //    prevTimer = timer_hw->timerawl;
 	pInstance->m_cyclesDone++;
 	while (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && pInstance->m_ringBuffer[pInstance->m_rbRdIndex] <= pInstance->m_cyclesDone)
 	{
@@ -42,9 +50,11 @@ bool Sound::onTimer(struct repeating_timer* pTimer)
 		digitalWriteFast(SND_PIN, soundBit);
 		pInstance->m_rbRdIndex = (++pInstance->m_rbRdIndex) & (SOUND_BUFFER_SIZE - 1);
 	}
-	if (pInstance->m_cyclesDone < LOOPCYCLES / ((SOUND_CLOCK / 8.0) * 28)) return true;
-	pInstance->m_cyclesDone -= (LOOPCYCLES / ((SOUND_CLOCK / 8.0) * 28));
-	rp2040.fifo.push(STOP_FRAME);
+	//if (pInstance->m_cyclesDone < LOOPCYCLES / ((SOUND_CLOCK / 8.0) * 28)) return true;
+	//pInstance->m_cyclesDone -= (LOOPCYCLES / ((SOUND_CLOCK / 8.0) * 28));
+    if (pInstance->m_cyclesDone < LOOPCYCLES / 42) return true;
+    pInstance->m_cyclesDone -= (LOOPCYCLES / 42);
+    rp2040.fifo.push(STOP_FRAME);
 	return false;
 }
 

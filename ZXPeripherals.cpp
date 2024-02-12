@@ -20,7 +20,7 @@ void Sound::update()
 	uint32_t ctrlData = 0;
 	if (rp2040.fifo.pop_nb(&ctrlData))
 	{
-		if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -SOUND_CLOCK, onTimer, this, &m_clockTimer);
+		if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -12, onTimer, this, &m_clockTimer);
 		if (ctrlData & WR_PORT)
 		{
 			int val = (ctrlData & 0x00FFFFFF);
@@ -36,13 +36,6 @@ bool Sound::onTimer(struct repeating_timer* pTimer)
 {
 	static uint32_t soundBit = 0/*, prevTimer = 0*/;
 	Sound* pInstance = (Sound*)pTimer->user_data;
-    //if (prevTimer)
-    //{
-    //    if (timer_hw->timerawl - prevTimer > 12) DBG_PRINTLN(timer_hw->timerawl - prevTimer);
-    //    prevTimer = timer_hw->timerawl;
-    //}
-    //else
-    //    prevTimer = timer_hw->timerawl;
 	pInstance->m_cyclesDone++;
 	while (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && pInstance->m_ringBuffer[pInstance->m_rbRdIndex] <= pInstance->m_cyclesDone)
 	{

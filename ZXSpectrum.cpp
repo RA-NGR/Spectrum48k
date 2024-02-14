@@ -389,12 +389,6 @@ void ZXSpectrum::stepZ80()
 			break;
 		}
 // -----------------------------------------------------------------------
-		case ADD_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			ADD(bytetemp);
-			break;
-		}
 		case ADD_R:
 		{
 			ADD((*(uint8_t*)(pRegisters[r_(opcode)])));
@@ -417,12 +411,6 @@ void ZXSpectrum::stepZ80()
 				uint8_t bytetemp = readMem(HL);
 				ADD(bytetemp);
 			}
-			break;
-		}
-		case ADC_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			ADC(bytetemp);
 			break;
 		}
 		case ADC_R:							/*!*/
@@ -449,12 +437,6 @@ void ZXSpectrum::stepZ80()
 			}
 			break;
 		}
-		case SUB_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			SUB(bytetemp);
-			break;
-		}
 		case SUB_R:							/*!*/
 		{
 			SUB((*(uint8_t*)(pRegisters[r_(opcode)])));
@@ -477,12 +459,6 @@ void ZXSpectrum::stepZ80()
 				uint8_t bytetemp = readMem(HL);
 				SUB(bytetemp);
 			}
-			break;
-		}
-		case SBC_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			SBC(bytetemp);
 			break;
 		}
 		case SBC_R:							/*!*/
@@ -509,12 +485,6 @@ void ZXSpectrum::stepZ80()
 			}
 			break;
 		}
-		case AND_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			AND(bytetemp);
-			break;
-		}
 		case AND_R:							/*!*/
 		{
 			AND((*(uint8_t*)(pRegisters[r_(opcode)])));
@@ -537,12 +507,6 @@ void ZXSpectrum::stepZ80()
 				uint8_t bytetemp = readMem(HL);
 				AND(bytetemp);
 			}
-			break;
-		}
-		case XOR_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			XOR(bytetemp);
 			break;
 		}
 		case XOR_R:							/*!*/
@@ -569,12 +533,6 @@ void ZXSpectrum::stepZ80()
 			}
 			break;
 		}
-		case OR_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			OR(bytetemp);
-			break;
-		}
 		case OR_R:							/*!*/
 		{
 			OR((*(uint8_t*)(pRegisters[r_(opcode)])));
@@ -597,12 +555,6 @@ void ZXSpectrum::stepZ80()
 				uint8_t bytetemp = readMem(HL);
 				OR(bytetemp);
 			}
-			break;
-		}
-		case CP_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			CP(bytetemp);
 			break;
 		}
 		case CP_R:							/*!*/
@@ -630,6 +582,54 @@ void ZXSpectrum::stepZ80()
 			break;
 		}
 // -----------------------------------------------------------------------
+		case ADD_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			ADD(bytetemp);
+			break;
+		}
+		case ADC_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			ADC(bytetemp);
+			break;
+		}
+		case SUB_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			SUB(bytetemp);
+			break;
+		}
+		case SBC_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			SBC(bytetemp);
+			break;
+		}
+		case AND_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			AND(bytetemp);
+			break;
+		}
+		case XOR_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			XOR(bytetemp);
+			break;
+		}
+		case OR_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			OR(bytetemp);
+			break;
+		}
+		case CP_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			CP(bytetemp);
+			break;
+		}
 		case CPL:
 		{
 			A ^= 0xff;

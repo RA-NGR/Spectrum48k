@@ -9,6 +9,10 @@ class Sound
 	int16_t m_ringBuffer[SOUND_BUFFER_SIZE];
 	uint16_t m_rbWrIndex = 0;
 	uint16_t m_rbRdIndex = 0;
+
+	uint32_t m_samplesBuffer[LOOPCYCLES / 16] = { 0 };
+	uint32_t m_samplesBufferIndex = 0;
+	uint32_t m_soundBit = 0;
 public:
 	Sound() {};
 	~Sound();

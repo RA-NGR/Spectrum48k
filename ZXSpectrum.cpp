@@ -204,7 +204,7 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 			else
 				m_borderColor = m_colorLookup[data & 0x07];
 		}
-		if (m_emulSettings.soundEnabled && m_outPortFE.soundOut != ((data >> 4) & 1)) rp2040.fifo.push_nb(m_Z80Processor.tCount & 0x00FFFFFF | WR_PORT);
+		if (m_emulSettings.soundEnabled && m_outPortFE.soundOut != ((data >> 4) & 1)) rp2040.fifo.push_nb(m_Z80Processor.tCount & 0x00FFFFFF | WR_PORT | (m_outPortFE.soundOut << 24));
 		m_outPortFE.rawData = data;
 	}
 	if (!(port & 0x0001))
@@ -388,6 +388,7 @@ void ZXSpectrum::stepZ80()
 			PC--;
 			break;
 		}
+// -----------------------------------------------------------------------
 		case ADD_N:
 		{
 			uint8_t bytetemp = readMem(PC++);
@@ -598,13 +599,6 @@ void ZXSpectrum::stepZ80()
 			}
 			break;
 		}
-		case CPL:
-		{
-			A ^= 0xff;
-			FL = (FL & (FLAG_C | FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_3 | FLAG_5)) | (FLAG_N | FLAG_H);
-			Q = FL;
-			break;
-		}
 		case CP_N:
 		{
 			uint8_t bytetemp = readMem(PC++);
@@ -633,6 +627,14 @@ void ZXSpectrum::stepZ80()
 				uint8_t bytetemp = readMem(HL);
 				CP(bytetemp);
 			}
+			break;
+		}
+// -----------------------------------------------------------------------
+		case CPL:
+		{
+			A ^= 0xff;
+			FL = (FL & (FLAG_C | FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_3 | FLAG_5)) | (FLAG_N | FLAG_H);
+			Q = FL;
 			break;
 		}
 		case PUSH_SS:						/*!*/

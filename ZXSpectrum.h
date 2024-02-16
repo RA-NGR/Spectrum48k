@@ -378,6 +378,7 @@ class ZXSpectrum
 		uint8_t q;
 		int32_t intEnabledAt;
 		int32_t tCount;
+		int32_t tCountDiv16;
 		void* pRegisters[8];
 		void* pPairs[5];
 		void* pDDRegisters[8];
@@ -421,11 +422,6 @@ class ZXSpectrum
 	uint8_t m_frameCounter = 0;
 	uint8_t* m_pZXMemory;
 	uint16_t* m_pScreenBuffer[2];
-//#ifdef CONT_TABLE
-//	uint8_t* m_pContendTable;
-//#else
-////	void __attribute__((section(".time_critical." "contendedAccess"))) contendedAccess(uint16_t address, int32_t time);
-//#endif // CONT_TABLE
 	bool m_initComplete = false;
 	int16_t m_scanLine = -1;
 	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;
@@ -440,6 +436,7 @@ class ZXSpectrum
 		};
 		uint8_t rawData;
 	} m_outPortFE;
+	int8_t m_soundOut;
 	uint8_t m_tapeIn = 0xBF;
 	uint8_t* m_pInPort;
 	Display* m_pDisplayInstance;
@@ -461,14 +458,14 @@ class ZXSpectrum
 	uint8_t unattachedPort();
 	uint8_t readPort(uint16_t port);
 	void writePort(uint16_t port, uint8_t data);
-	void stepZ80();
+	void __attribute__((section(".time_critical." "stepZ80"))) stepZ80();
 public:
 	ZXSpectrum() {};
 	~ZXSpectrum();
 	bool init(Display* pDisplayInstance, Keyboard* pKeyboardInstance);
 	bool loadROMFile(const char* pFileName);
 	void resetZ80();
-	void loopZ80();
+	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };

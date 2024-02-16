@@ -5,14 +5,9 @@ class Sound
 {
 	alarm_pool_t* m_pAlarmPool = NULL;
 	struct repeating_timer m_clockTimer;
-	int m_cyclesDone = 0;
-	int16_t m_ringBuffer[SOUND_BUFFER_SIZE];
-	uint16_t m_rbWrIndex = 0;
-	uint16_t m_rbRdIndex = 0;
-
-	uint32_t m_samplesBuffer[LOOPCYCLES / 16] = { 0 };
-	uint32_t m_samplesBufferIndex = 0;
-	uint32_t m_soundBit = 0;
+	uint16_t m_samplesBuffer[LOOPCYCLES / 112] = { 0 };
+	uint16_t m_samplesBufferWrIndex;
+	uint16_t m_samplesBufferRdIndex;
 public:
 	Sound() {};
 	~Sound();

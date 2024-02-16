@@ -1690,7 +1690,7 @@ void ZXSpectrum::resetZ80()
 	void** pRegisters = m_Z80Processor.pRegisters;
 	AF = AF_ = 0xffff;
 	SP = 0xffff;
-	m_Z80Processor.intEnabledAt = -1;
+	m_Z80Processor.intEnabledAt = m_Z80Processor.tCountDiv16 = -1;
 	m_maxEmulTime = 0;
 	m_Z80Processor.pRegisters[0] = m_Z80Processor.pDDRegisters[0] = m_Z80Processor.pFDRegisters[0] = &B;
 	m_Z80Processor.pRegisters[1] = m_Z80Processor.pDDRegisters[1] = m_Z80Processor.pFDRegisters[1] = &C;
@@ -1704,12 +1704,14 @@ void ZXSpectrum::resetZ80()
 	m_Z80Processor.pPairs[2] = &HL; m_Z80Processor.pDDPairs[2] = &IX; m_Z80Processor.pFDPairs[2] = &IY;
 	m_Z80Processor.pPairs[3] = m_Z80Processor.pDDPairs[3] = m_Z80Processor.pFDPairs[3] = &SP;
 	m_Z80Processor.pPairs[4] = m_Z80Processor.pDDPairs[4] = m_Z80Processor.pFDPairs[4] = &AF;
+	m_soundOut = 0;
 }
 
 void ZXSpectrum::loopZ80()
 {
 	uint64_t startTime = micros();
 	int32_t usedCycles;
+	uint8_t samplesCount = 0;
 	rp2040.fifo.push(START_FRAME);
 	intZ80();
 	while (m_Z80Processor.tCount < LOOPCYCLES)
@@ -1727,6 +1729,18 @@ void ZXSpectrum::loopZ80()
 		{
 			m_scanLine = scanLine;
 			if (m_scanLine >= SCREENOFFSET && m_scanLine <= SCREENOFFSET + 239) drawLine(m_scanLine - SCREENOFFSET);
+		}
+		if (m_Z80Processor.tCount >> 4 != m_Z80Processor.tCountDiv16)
+		{
+			m_Z80Processor.tCountDiv16 = m_Z80Processor.tCount >> 4;
+			m_soundOut += m_outPortFE.soundOut;
+			m_soundOut -= (m_outPortFE.soundOut ^ 1);
+			m_soundOut = (m_soundOut > 7 ? 7 : m_soundOut);
+			m_soundOut = (m_soundOut < 0 ? 0 : m_soundOut);
+			if (++samplesCount == 7)
+			{
+				samplesCount = 0; rp2040.fifo.push_nb(WR_PORT | m_soundOut);
+			}
 		}
 	}
 	while (m_pbRIndex != m_pbWIndex)

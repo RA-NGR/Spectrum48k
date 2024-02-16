@@ -199,6 +199,7 @@ void loop()
 
 void setup1()
 {
+	delay(500);
 	g_soundBeeper.init();
 }
 

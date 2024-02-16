@@ -8,10 +8,15 @@ Sound::~Sound()
 
 bool Sound::init()
 {
-	
-	m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(1);
-	pinMode(SND_PIN, OUTPUT);
-	digitalWriteFast(SND_PIN, 0);
+    gpio_set_function(SND_PIN, GPIO_FUNC_PWM);
+    const int audio_pin_slice = pwm_gpio_to_slice_num(SND_PIN);
+    pwm_config config = pwm_get_default_config();
+    pwm_config_set_clkdiv(&config, 1.0f);
+    DBG_PRINTLN(config.top);
+    pwm_config_set_wrap(&config, 623);
+    pwm_init(audio_pin_slice, &config, true);
+    pwm_set_gpio_level(SND_PIN, 0);
+    m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(1);
 	return true;
 }
 
@@ -22,40 +27,25 @@ void Sound::update()
 	{
         if (ctrlData & START_FRAME)
         {
-            alarm_pool_add_repeating_timer_us(m_pAlarmPool, -12, onTimer, this, &m_clockTimer);
-            m_samplesBufferIndex = 0;
+            alarm_pool_add_repeating_timer_us(m_pAlarmPool, -SOUND_CLOCK, onTimer, this, &m_clockTimer);
+            m_samplesBufferWrIndex = m_samplesBufferRdIndex = 0;
         }
 		if (ctrlData & WR_PORT)
 		{
-
-			int32_t val = (ctrlData & 0x00FFFFFF);
-			if (ctrlData & 0x00800000) val |= 0xFF000000; // restore sign bit
-            for (; m_samplesBufferIndex < (val >> 4) && m_samplesBufferIndex < LOOPCYCLES / 16; m_samplesBufferIndex++) m_samplesBuffer[m_samplesBufferIndex] = m_soundBit;
-            m_soundBit = (ctrlData & 0x01000000) >> 24;
-            //m_ringBuffer[m_rbWrIndex] = val / ((SOUND_CLOCK / 8.0) * 28);
-            m_ringBuffer[m_rbWrIndex] = val / 42;
-            m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
+            if (m_samplesBufferWrIndex >= LOOPCYCLES / 112) 
+                DBG_PRINTLN("Oversample");
+            else
+                m_samplesBuffer[m_samplesBufferWrIndex++] = ctrlData & 0x0000FFFF;
 		}
 	}
 }
 
 bool Sound::onTimer(struct repeating_timer* pTimer)
 {
-	static uint32_t soundBit = 0/*, prevTimer = 0*/;
 	Sound* pInstance = (Sound*)pTimer->user_data;
-	pInstance->m_cyclesDone++;
-	while (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && pInstance->m_ringBuffer[pInstance->m_rbRdIndex] <= pInstance->m_cyclesDone)
-	{
-		soundBit ^= HIGH;
-		digitalWriteFast(SND_PIN, soundBit);
-		pInstance->m_rbRdIndex = (++pInstance->m_rbRdIndex) & (SOUND_BUFFER_SIZE - 1);
-	}
-	//if (pInstance->m_cyclesDone < LOOPCYCLES / ((SOUND_CLOCK / 8.0) * 28)) return true;
-	//pInstance->m_cyclesDone -= (LOOPCYCLES / ((SOUND_CLOCK / 8.0) * 28));
-    if (pInstance->m_cyclesDone < LOOPCYCLES / 42) return true;
-    pInstance->m_cyclesDone -= (LOOPCYCLES / 42);
+    pwm_set_gpio_level(SND_PIN, pInstance->m_samplesBuffer[pInstance->m_samplesBufferRdIndex++] << 4);
+    if (pInstance->m_samplesBufferRdIndex < LOOPCYCLES / 112) return true;
     rp2040.fifo.push(STOP_FRAME);
-    for (; pInstance->m_samplesBufferIndex < LOOPCYCLES / 16; pInstance->m_samplesBufferIndex++) pInstance->m_samplesBuffer[pInstance->m_samplesBufferIndex] = pInstance->m_soundBit;
 	return false;
 }
 

@@ -421,11 +421,6 @@ class ZXSpectrum
 	uint8_t m_frameCounter = 0;
 	uint8_t* m_pZXMemory;
 	uint16_t* m_pScreenBuffer[2];
-//#ifdef CONT_TABLE
-//	uint8_t* m_pContendTable;
-//#else
-////	void __attribute__((section(".time_critical." "contendedAccess"))) contendedAccess(uint16_t address, int32_t time);
-//#endif // CONT_TABLE
 	bool m_initComplete = false;
 	int16_t m_scanLine = -1;
 	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;
@@ -461,7 +456,7 @@ class ZXSpectrum
 	uint8_t unattachedPort();
 	uint8_t readPort(uint16_t port);
 	void writePort(uint16_t port, uint8_t data);
-	void stepZ80();
+	void __attribute__((section(".time_critical." "stepZ80"))) stepZ80();
 public:
 	ZXSpectrum() {};
 	~ZXSpectrum();

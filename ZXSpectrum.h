@@ -463,7 +463,7 @@ public:
 	bool init(Display* pDisplayInstance, Keyboard* pKeyboardInstance);
 	bool loadROMFile(const char* pFileName);
 	void resetZ80();
-	void loopZ80();
+	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };

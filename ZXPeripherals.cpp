@@ -8,7 +8,6 @@ Sound::~Sound()
 
 bool Sound::init()
 {
-	
 	m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(1);
 	pinMode(SND_PIN, OUTPUT);
 	digitalWriteFast(SND_PIN, 0);
@@ -25,7 +24,6 @@ void Sound::update()
 		{
 			int val = (ctrlData & 0x00FFFFFF);
 			if (ctrlData & 0x00800000) val |= 0xFF000000; // restore sign bit
-			//m_ringBuffer[m_rbWrIndex] = val / ((SOUND_CLOCK / 8.0) * 28);
             m_ringBuffer[m_rbWrIndex] = val / 42;
             m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
 		}
@@ -43,8 +41,6 @@ bool Sound::onTimer(struct repeating_timer* pTimer)
 		digitalWriteFast(SND_PIN, soundBit);
 		pInstance->m_rbRdIndex = (++pInstance->m_rbRdIndex) & (SOUND_BUFFER_SIZE - 1);
 	}
-	//if (pInstance->m_cyclesDone < LOOPCYCLES / ((SOUND_CLOCK / 8.0) * 28)) return true;
-	//pInstance->m_cyclesDone -= (LOOPCYCLES / ((SOUND_CLOCK / 8.0) * 28));
     if (pInstance->m_cyclesDone < LOOPCYCLES / 42) return true;
     pInstance->m_cyclesDone -= (LOOPCYCLES / 42);
     rp2040.fifo.push(STOP_FRAME);

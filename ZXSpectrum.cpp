@@ -204,7 +204,7 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 			else
 				m_borderColor = m_colorLookup[data & 0x07];
 		}
-		if (m_emulSettings.soundEnabled && m_outPortFE.soundOut != ((data >> 4) & 1)) rp2040.fifo.push_nb(m_Z80Processor.tCount & 0x00FFFFFF | WR_PORT | (m_outPortFE.soundOut << 24));
+//		if (m_emulSettings.soundEnabled && m_outPortFE.soundOut != ((data >> 4) & 1)) rp2040.fifo.push_nb(m_Z80Processor.tCount & 0x00FFFFFF | WR_PORT | (m_outPortFE.soundOut << 24));
 		m_outPortFE.rawData = data;
 	}
 	if (!(port & 0x0001))

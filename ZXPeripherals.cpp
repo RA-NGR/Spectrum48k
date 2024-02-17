@@ -32,10 +32,8 @@ void Sound::update()
         }
 		if (ctrlData & WR_PORT)
 		{
-            if (m_samplesBufferWrIndex >= LOOPCYCLES / 112) 
-                DBG_PRINTLN("Oversample");
-            else
-                m_samplesBuffer[m_samplesBufferWrIndex++] = ctrlData & 0x0000FFFF;
+            if (m_samplesBufferWrIndex >= LOOPCYCLES / 112) DBG_PRINTLN(m_samplesBufferWrIndex);
+            m_samplesBuffer[m_samplesBufferWrIndex++] = ctrlData & 0x0000FFFF;
 		}
 	}
 }
@@ -43,7 +41,7 @@ void Sound::update()
 bool Sound::onTimer(struct repeating_timer* pTimer)
 {
 	Sound* pInstance = (Sound*)pTimer->user_data;
-    pwm_set_gpio_level(SND_PIN, pInstance->m_samplesBuffer[pInstance->m_samplesBufferRdIndex++] << 4);
+    pwm_set_gpio_level(SND_PIN, pInstance->m_samplesBuffer[pInstance->m_samplesBufferRdIndex++] << 12);
     if (pInstance->m_samplesBufferRdIndex < LOOPCYCLES / 112) return true;
     rp2040.fifo.push(STOP_FRAME);
 	return false;

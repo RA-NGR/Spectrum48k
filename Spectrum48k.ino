@@ -53,7 +53,6 @@ void setup()
 	g_mainKeyboard.init();
 	g_zxEmulator.init(&g_mainDisplay, &g_mainKeyboard);
 	g_zxEmulator.resetZ80();
-	DBG_PRINTF("Free mem: %d\n", rp2040.getFreeHeap());
 	pinMode(LED_BUILTIN, OUTPUT);
 }
 
@@ -69,11 +68,6 @@ bool readTAPSection(File& file)
 		}
 
 	}
-	//if (g_zxTape.tapSize > 49152)
-	//{
-	//	DBG_PRINTLN("TAP section too big");
-	//	return false;
-	//}
 	g_zxTape.pTapBuffer[g_zxTape.tapSize] = 0x00;
 	if (file.readBytes((char*)g_zxTape.pTapBuffer, g_zxTape.tapSize) != g_zxTape.tapSize) return false;
 	return true;
@@ -116,6 +110,7 @@ void loop()
 					case '5':
 						emulTime = g_zxEmulator.getEmulationTime();
 						maxTime = g_zxEmulator.getMaxEmulationTime();
+						DBG_PRINTF("Free mem: %d\n", rp2040.getFreeHeap());
 						DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
 						break;
 					default:
@@ -141,7 +136,6 @@ void loop()
 		{
 			delay(500);
 			g_zxEmulator.resetZ80();
-			DBG_PRINTF("Free mem: %d\n", rp2040.getFreeHeap());
 		}
 		if (fKeys == 0x10)
 		{
@@ -169,13 +163,13 @@ void loop()
 			}
 		}
 #ifdef DBG
-		uint32_t emulTime = g_zxEmulator.getEmulationTime(), maxTime = g_zxEmulator.getMaxEmulationTime();
-		loopCounter++;
-		if (loopCounter > 89)
-		{
-			DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
-			loopCounter = 0;
-		}
+		//uint32_t emulTime = g_zxEmulator.getEmulationTime(), maxTime = g_zxEmulator.getMaxEmulationTime();
+		//loopCounter++;
+		//if (loopCounter > 89)
+		//{
+		//	DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
+		//	loopCounter = 0;
+		//}
 #endif // DBG
 	}
 	else

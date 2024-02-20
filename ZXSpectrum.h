@@ -377,8 +377,9 @@ class ZXSpectrum
 		uint8_t iff1, iff2, im;
 		int halted;
 		uint8_t q;
-		int32_t intEnabledAt;
-		int32_t tCount;
+		int intEnabledAt;
+		int tCount;
+		uint32_t backTrack; // flag of DDxxFDxx pattern
 		void* pRegisters[8];
 		void* pPairs[5];
 		void* pDDRegisters[8];
@@ -450,13 +451,13 @@ class ZXSpectrum
 	} m_emulSettings = { 0x01 };
 	bool m_soundEnabled = true;
 	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
-	int8_t intZ80();
+	bool __attribute__((section(".time_critical." "intZ80"))) intZ80();
 	void processTape();
 	void __attribute__((section(".time_critical." "writeMem"))) writeMem(uint16_t address, uint8_t data);
 	uint8_t __attribute__((section(".time_critical." "readMem"))) readMem(uint16_t address);
-	uint8_t unattachedPort();
-	uint8_t readPort(uint16_t port);
-	void writePort(uint16_t port, uint8_t data);
+	uint8_t __attribute__((section(".time_critical." "unattachedPort"))) unattachedPort();
+	uint8_t __attribute__((section(".time_critical." "readPort"))) readPort(uint16_t port);
+	void __attribute__((section(".time_critical." "writePort"))) writePort(uint16_t port, uint8_t data);
 	void __attribute__((section(".time_critical." "stepZ80"))) stepZ80();
 public:
 	ZXSpectrum() {};

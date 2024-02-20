@@ -64,15 +64,12 @@
 #define FLAG_Z	0x40
 #define FLAG_S	0x80
 
-
 #define r(opcode)                                       (((opcode) >> 3) & 0x07)
 #define r_(opcode)                                      ((opcode) & 0x07)
 #define q(opcode)                                       (((opcode) >> 3) & 0x03)
 #define dd(opcode)                                      (((opcode) >> 4) & 0x03)
 
 #define CC(cc)                                          ((FL ^ xorConditionTable[(cc)]) & andConditionTable[(cc)])
-
-#define INDIRECT_HL 0x06 
 
 #define CONTENDED 0x4000
 #define contendedAccess(address, time)                  { if ((address & 0xC000) == 0x4000 && m_Z80Processor.tCount > 14334 && m_Z80Processor.tCount < 57245) m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - 14335) % 224]; m_Z80Processor.tCount += (time); }

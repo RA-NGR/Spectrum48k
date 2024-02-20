@@ -63,13 +63,13 @@ void ZXSpectrum::drawLine(int posY)
 	if (posY % DMA_BUFF_SIZE == DMA_BUFF_SIZE - 1) m_pDisplayInstance->drawBuffer(buffSwitch, 320 * DMA_BUFF_SIZE);
 }
 
-int8_t ZXSpectrum::intZ80()
+bool ZXSpectrum::intZ80()
 {
 	uint16_t inttemp;
 
 	if (IFF1 && m_Z80Processor.tCount < IRQ_LENGTH)
 	{
-		if (m_Z80Processor.tCount == m_Z80Processor.intEnabledAt) return 0;
+		if (m_Z80Processor.tCount == m_Z80Processor.intEnabledAt || m_Z80Processor.backTrack) return false;
 		if (m_Z80Processor.halted)
 		{
 			PC++; m_Z80Processor.halted = 0;
@@ -95,9 +95,9 @@ int8_t ZXSpectrum::intZ80()
 		}
 		m_Z80Processor.memptr.w = PC;
 		Q = 0;
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 void ZXSpectrum::processTape()
@@ -236,6 +236,7 @@ void ZXSpectrum::stepZ80()
 	bool repeatLoop;
 	do
 	{
+		m_Z80Processor.backTrack = false;
 		repeatLoop = false;
 		switch (instruction)
 		{
@@ -1565,6 +1566,7 @@ void ZXSpectrum::stepZ80()
 				PC -= 2;
 				FL |= ((B & FLAG_S) | (PCH & (FLAG_3 | FLAG_5)) | (initemp2 < initemp ? FLAG_C | (initemp & 0x80 ? ((B & 0x0F) == 0 ? FLAG_H : 0) | parityTable[((initemp2 & 0x07) ^ B) ^
 					  ((B - 1) & 7)] : ((B & 0xF) == 0xF ? FLAG_H : 0) | parityTable[((initemp2 & 0x07) ^ B) ^ ((B + 1) & 7)]) : parityTable[((initemp2 & 0x07) ^ B) ^ (B & 7)]));
+				m_Z80Processor.memptr.w = PC + 1;
 			}
 			else
 				FL |= (FLAG_Z | (initemp2 < initemp ? (FLAG_H | FLAG_C) : 0) | parityTable[(initemp2 & 0x07) ^ B]);
@@ -1598,6 +1600,7 @@ void ZXSpectrum::stepZ80()
 				PC -= 2;
 				FL |= ((B & FLAG_S) | (PCH & (FLAG_3 | FLAG_5)) | (outitemp2 < outitemp ? FLAG_C | (outitemp & 0x80 ? ((B & 0x0F) == 0 ? FLAG_H : 0) | parityTable[((outitemp2 & 0x07) ^ B) ^
 					  ((B - 1) & 7)] : ((B & 0xF) == 0xF ? FLAG_H : 0) | parityTable[((outitemp2 & 0x07) ^ B) ^ ((B + 1) & 7)]) : parityTable[((outitemp2 & 0x07) ^ B) ^ (B & 7)]));
+				m_Z80Processor.memptr.w = PC + 1;
 			}
 			else
 				FL |= (FLAG_Z | (outitemp2 < outitemp ? (FLAG_H | FLAG_C) : 0) | parityTable[(outitemp2 & 0x07) ^ B]);
@@ -1633,6 +1636,7 @@ void ZXSpectrum::stepZ80()
 		case DD_PREFIX:
 		{
 			contendedAccess(PC, 4);
+			uint8_t prevOpcode = opcode;
 			opcode = m_pZXMemory[PC];
 			instruction = instructionTable[opcode];
 			if (instruction <= CB_PREFIX)
@@ -1644,14 +1648,13 @@ void ZXSpectrum::stepZ80()
 				repeatLoop = true;
 			}
 			else
-			{
-				DBG_PRINTLN("DD Backtrack");
-			}
+				m_Z80Processor.backTrack = true;
 			break;
 		}
 		case FD_PREFIX:
 		{
 			contendedAccess(PC, 4);
+			uint8_t prevOpcode = opcode;
 			opcode = m_pZXMemory[PC];
 			instruction = instructionTable[opcode];
 			if (instruction <= CB_PREFIX)
@@ -1663,9 +1666,7 @@ void ZXSpectrum::stepZ80()
 				repeatLoop = true;
 			}
 			else
-			{
-				DBG_PRINTLN("FD Backtrack");
-			}
+				m_Z80Processor.backTrack = true;
 			break;
 		}
 		default:

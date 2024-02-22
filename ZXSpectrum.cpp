@@ -63,13 +63,13 @@ void ZXSpectrum::drawLine(int posY)
 	if (posY % DMA_BUFF_SIZE == DMA_BUFF_SIZE - 1) m_pDisplayInstance->drawBuffer(buffSwitch, 320 * DMA_BUFF_SIZE);
 }
 
-bool ZXSpectrum::intZ80()
+void ZXSpectrum::intZ80()
 {
 	uint16_t inttemp;
 
-	if (IFF1 && m_Z80Processor.tCount < IRQ_LENGTH)
+	if (IFF1)
 	{
-		if (m_Z80Processor.tCount == m_Z80Processor.intEnabledAt || m_Z80Processor.backTrack) return false;
+		if (m_Z80Processor.skipINT) return;
 		if (m_Z80Processor.halted)
 		{
 			PC++; m_Z80Processor.halted = 0;
@@ -95,14 +95,12 @@ bool ZXSpectrum::intZ80()
 		}
 		m_Z80Processor.memptr.w = PC;
 		Q = 0;
-		return true;
 	}
-	return false;
 }
 
 void ZXSpectrum::processTape()
 {
-	m_tapeIn ^= 0x40;
+	m_tapeBit ^= 0x01;
 	m_ZXTape.statesCount--;
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles + m_ZXTape.stateCycles; // restore state cycles
 	if (m_ZXTape.statesCount > 0) return;
@@ -161,15 +159,15 @@ uint8_t ZXSpectrum::unattachedPort()
 
 uint8_t ZXSpectrum::readPort(uint16_t port)
 {
-	uint8_t retVal = 0xFF;
+	uint8_t retVal = m_defaultPortFal;
 	uint32_t periphData = 0x0000001F, timeOut = 0;
 
 	contendedAccess(port, 1);
 	if (!(port & 0x0001))
 	{
 		contendedAccess(CONTENDED, 2);
-		retVal &= m_tapeIn;
 		for (int i = 0; i < 8; i++) if (!((port >> (i + 8)) & 0x01)) retVal &= m_pInPort[i];
+		if (m_tapeBit) retVal ^= 0x40;
 	}
 	else
 	{
@@ -204,8 +202,13 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 			else
 				m_borderColor = m_colorLookup[data & 0x07];
 		}
-		if (m_emulSettings.soundEnabled && m_outPortFE.soundOut != ((data >> 4) & 1)) rp2040.fifo.push_nb(m_Z80Processor.tCount & 0x00FFFFFF | WR_PORT);
+		if (m_emulSettings.soundEnabled && m_outPortFE.soundOut != ((data >> 4) & 1)) rp2040.fifo.push_nb(m_Z80Processor.tCount & 0x00FFFFFF | WR_PORT | (data & 0x10) << 20);
 		m_outPortFE.rawData = data;
+#ifdef ISSUE_2
+		m_defaultPortFal = (data & 0x18 ? 0xFF : 0xBF); // issue 2
+#else
+		m_defaultPortFal = (data & 0x10 ? 0xFF : 0xBF); // issue 3
+#endif // ISSUE_2
 	}
 	if (!(port & 0x0001))
 	{
@@ -236,7 +239,7 @@ void ZXSpectrum::stepZ80()
 	bool repeatLoop;
 	do
 	{
-		m_Z80Processor.backTrack = false;
+		m_Z80Processor.skipINT = 0;
 		repeatLoop = false;
 		switch (instruction)
 		{
@@ -792,7 +795,7 @@ void ZXSpectrum::stepZ80()
 		case EI:
 		{
 			IFF1 = IFF2 = 1;
-			m_Z80Processor.intEnabledAt = m_Z80Processor.tCount;
+			m_Z80Processor.skipINT = true;
 			break;
 		}
 		case LD_SP_HL:						/*!*/
@@ -1386,7 +1389,6 @@ void ZXSpectrum::stepZ80()
 				A = (R & 0x7f) | (R7 & 0x80);
 			FL = (FL & FLAG_C) | sz53Table[A] | (IFF2 ? FLAG_V : 0);
 			Q = FL;
-			m_Z80Processor.iff2_read = 1;
 			break;
 		}
 		case IM_N:
@@ -1648,7 +1650,7 @@ void ZXSpectrum::stepZ80()
 				repeatLoop = true;
 			}
 			else
-				m_Z80Processor.backTrack = true;
+				m_Z80Processor.skipINT = 1;
 			break;
 		}
 		case FD_PREFIX:
@@ -1666,7 +1668,7 @@ void ZXSpectrum::stepZ80()
 				repeatLoop = true;
 			}
 			else
-				m_Z80Processor.backTrack = true;
+				m_Z80Processor.skipINT = 1;
 			break;
 		}
 		default:
@@ -1705,7 +1707,6 @@ void ZXSpectrum::resetZ80()
 	void** pRegisters = m_Z80Processor.pRegisters;
 	AF = AF_ = 0xffff;
 	SP = 0xffff;
-	m_Z80Processor.intEnabledAt = -1;
 	m_maxEmulTime = 0;
 	m_Z80Processor.pRegisters[0] = m_Z80Processor.pDDRegisters[0] = m_Z80Processor.pFDRegisters[0] = &B;
 	m_Z80Processor.pRegisters[1] = m_Z80Processor.pDDRegisters[1] = m_Z80Processor.pFDRegisters[1] = &C;
@@ -1719,6 +1720,9 @@ void ZXSpectrum::resetZ80()
 	m_Z80Processor.pPairs[2] = &HL; m_Z80Processor.pDDPairs[2] = &IX; m_Z80Processor.pFDPairs[2] = &IY;
 	m_Z80Processor.pPairs[3] = m_Z80Processor.pDDPairs[3] = m_Z80Processor.pFDPairs[3] = &SP;
 	m_Z80Processor.pPairs[4] = m_Z80Processor.pDDPairs[4] = m_Z80Processor.pFDPairs[4] = &AF;
+	/*m_tapeBit = 0; */m_defaultPortFal = 0xFF;
+	rp2040.fifo.push(RESET);
+	DBG_PRINTLN(sizeof(m_Z80Processor));
 }
 
 void ZXSpectrum::loopZ80()
@@ -1726,9 +1730,9 @@ void ZXSpectrum::loopZ80()
 	uint64_t startTime = micros();
 	int32_t usedCycles;
 	rp2040.fifo.push(START_FRAME);
-	intZ80();
 	while (m_Z80Processor.tCount < LOOPCYCLES)
 	{
+		if (m_Z80Processor.tCount < IRQ_LENGTH) intZ80();
 		usedCycles = m_Z80Processor.tCount;
 		stepZ80();
 		usedCycles = m_Z80Processor.tCount - usedCycles;
@@ -1750,7 +1754,7 @@ void ZXSpectrum::loopZ80()
 	}
 	m_Z80Processor.tCount -= LOOPCYCLES;
 	m_frameCounter = (++m_frameCounter) & 0x1F;
-	if (m_Z80Processor.intEnabledAt >= 0) m_Z80Processor.intEnabledAt -= LOOPCYCLES;
+	//if (m_Z80Processor.intEnabledAt >= 0) m_Z80Processor.intEnabledAt -= LOOPCYCLES;
 	m_emulationTime = micros() - startTime;
 	if (m_maxEmulTime < m_emulationTime) m_maxEmulTime = m_emulationTime;
 	while (!(rp2040.fifo.pop() & STOP_FRAME));
@@ -1765,6 +1769,7 @@ void ZXSpectrum::startTape(uint8_t* pBuffer, uint32_t bufferSize)
 	m_ZXTape.tapeState = 2; // PILOT tone
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
 	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
+	m_tapeBit = 0;
 }
 
 void ZXSpectrum::tapeMode(bool isTurbo)

@@ -373,13 +373,11 @@ class ZXSpectrum
 		uint8_t r7;
 		pair sp, pc;
 		pair memptr;
-		int iff2_read;
 		uint8_t iff1, iff2, im;
-		int halted;
 		uint8_t q;
-		int intEnabledAt;
+		uint32_t halted;
+		uint32_t skipINT; // Processor is just after EI or within large DDDDxx, FDFDxx, DDFDxx or FDDDxx block 
 		int tCount;
-		uint32_t backTrack; // flag of DDxxFDxx pattern
 		void* pRegisters[8];
 		void* pPairs[5];
 		void* pDDRegisters[8];
@@ -417,6 +415,7 @@ class ZXSpectrum
 		uint8_t y;
 		uint16_t color;
 	} m_borderColors[BORDER_BUFFER_SIZE];
+	uint8_t m_defaultPortFal = 0xFF;
 	uint8_t m_pbWIndex = 0;
 	uint8_t m_pbRIndex = 0;
 	uint16_t m_borderColor = m_colorLookup[7];
@@ -437,7 +436,7 @@ class ZXSpectrum
 		};
 		uint8_t rawData;
 	} m_outPortFE;
-	uint8_t m_tapeIn = 0xBF;
+	uint8_t m_tapeBit = 0;
 	uint8_t* m_pInPort;
 	Display* m_pDisplayInstance;
 	union ZXSettings
@@ -451,7 +450,7 @@ class ZXSpectrum
 	} m_emulSettings = { 0x01 };
 	bool m_soundEnabled = true;
 	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
-	bool __attribute__((section(".time_critical." "intZ80"))) intZ80();
+	void __attribute__((section(".time_critical." "intZ80"))) intZ80();
 	void processTape();
 	void __attribute__((section(".time_critical." "writeMem"))) writeMem(uint16_t address, uint8_t data);
 	uint8_t __attribute__((section(".time_critical." "readMem"))) readMem(uint16_t address);
@@ -470,7 +469,7 @@ public:
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
 	void startTape(uint8_t* pBuffer, uint32_t bufferSize);
-	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeIn = 0xBF; };
+	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
 	void tapeMode(bool isTurbo = false);
 	void storeState(const char* pFileName);

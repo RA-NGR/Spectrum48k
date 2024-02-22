@@ -19,12 +19,12 @@ void Sound::update()
 	uint32_t ctrlData = 0;
 	if (rp2040.fifo.pop_nb(&ctrlData))
 	{
+        if (ctrlData == RESET) m_cyclesDone = 0;
 		if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -12, onTimer, this, &m_clockTimer);
 		if (ctrlData & WR_PORT)
 		{
-			int val = (ctrlData & 0x00FFFFFF);
-			if (ctrlData & 0x00800000) val |= 0xFF000000; // restore sign bit
-            m_ringBuffer[m_rbWrIndex] = val / 42;
+			uint32_t val = (ctrlData & 0x00FFFFFF), soundBit = (ctrlData & 0x01000000);
+            m_ringBuffer[m_rbWrIndex] = (val / 42) | (soundBit >> 9);
             m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
 		}
 	}
@@ -32,15 +32,15 @@ void Sound::update()
 
 bool Sound::onTimer(struct repeating_timer* pTimer)
 {
-	static uint32_t soundBit = 0/*, prevTimer = 0*/;
+	uint32_t soundBit = 0;
 	Sound* pInstance = (Sound*)pTimer->user_data;
 	pInstance->m_cyclesDone++;
-	while (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && pInstance->m_ringBuffer[pInstance->m_rbRdIndex] <= pInstance->m_cyclesDone)
+	while (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && (pInstance->m_ringBuffer[pInstance->m_rbRdIndex] & 0x7FFF) <= pInstance->m_cyclesDone)
 	{
-		soundBit ^= HIGH;
-		digitalWriteFast(SND_PIN, soundBit);
+        soundBit = pInstance->m_ringBuffer[pInstance->m_rbRdIndex] >> 15;
+        digitalWriteFast(SND_PIN, soundBit);
 		pInstance->m_rbRdIndex = (++pInstance->m_rbRdIndex) & (SOUND_BUFFER_SIZE - 1);
-	}
+    }
     if (pInstance->m_cyclesDone < LOOPCYCLES / 42) return true;
     pInstance->m_cyclesDone -= (LOOPCYCLES / 42);
     rp2040.fifo.push(STOP_FRAME);

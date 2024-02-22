@@ -39,8 +39,12 @@
 //#define TFT_REFRESHRATE 0x1E /* 63 Hz	 */
 //#define TFT_REFRESHRATE 0x1F /* 61 Hz	 */
 
+//#define ISSUE_2
+// if ISSUE_2 is undefinded, emulator will use Issue 3
+
 #define DMA_BUFF_SIZE 30
 
+#define RESET		0x00000000
 #define START_FRAME 0x10000000
 #define STOP_FRAME  0x20000000
 #define WR_PORT     0x40000000

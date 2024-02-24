@@ -65,11 +65,9 @@ void ZXSpectrum::drawLine(int posY)
 
 void ZXSpectrum::intZ80()
 {
-	uint16_t inttemp;
-
-	if (IFF1)
+	if (m_Z80Processor.skipINT) return;
+	if (IFF1 && m_Z80Processor.tCount < IRQ_LENGTH)
 	{
-		if (m_Z80Processor.skipINT) return;
 		if (m_Z80Processor.halted)
 		{
 			PC++; m_Z80Processor.halted = 0;
@@ -87,9 +85,11 @@ void ZXSpectrum::intZ80()
 			PC = 0x0038;
 			break;
 		case 2:
-			inttemp = (0x100 * I) + 0xFF;
+		{
+			uint16_t inttemp = (0x100 * I) + 0xFF;
 			PCL = readMem(inttemp++); PCH = readMem(inttemp);
 			break;
+		}
 		default:
 			break;
 		}
@@ -1611,6 +1611,7 @@ void ZXSpectrum::stepZ80()
 		}
 		case ED_UNDEFINED:
 		{
+			DBG_PRINTLN("ED undefined");
 			break;
 		}
 		case CB_PREFIX:
@@ -1641,10 +1642,10 @@ void ZXSpectrum::stepZ80()
 			uint8_t prevOpcode = opcode;
 			opcode = m_pZXMemory[PC];
 			instruction = instructionTable[opcode];
+			PC++;
+			R++;
 			if (instruction <= CB_PREFIX)
 			{
-				PC++;
-				R++;
 				pRegisters = m_Z80Processor.pDDRegisters;
 				pPairs = m_Z80Processor.pDDPairs;
 				repeatLoop = true;
@@ -1659,10 +1660,10 @@ void ZXSpectrum::stepZ80()
 			uint8_t prevOpcode = opcode;
 			opcode = m_pZXMemory[PC];
 			instruction = instructionTable[opcode];
+			PC++;
+			R++;
 			if (instruction <= CB_PREFIX)
 			{
-				PC++;
-				R++;
 				pRegisters = m_Z80Processor.pFDRegisters;
 				pPairs = m_Z80Processor.pFDPairs;
 				repeatLoop = true;
@@ -1704,9 +1705,8 @@ void ZXSpectrum::resetZ80()
 {
 	stopTape();
 	m_Z80Processor = { 0 };
-	void** pRegisters = m_Z80Processor.pRegisters;
-	AF = AF_ = 0xffff;
-	SP = 0xffff;
+	//AF = AF_ = 0xffff;
+	//SP = 0xffff;
 	m_maxEmulTime = 0;
 	m_Z80Processor.pRegisters[0] = m_Z80Processor.pDDRegisters[0] = m_Z80Processor.pFDRegisters[0] = &B;
 	m_Z80Processor.pRegisters[1] = m_Z80Processor.pDDRegisters[1] = m_Z80Processor.pFDRegisters[1] = &C;
@@ -1720,9 +1720,9 @@ void ZXSpectrum::resetZ80()
 	m_Z80Processor.pPairs[2] = &HL; m_Z80Processor.pDDPairs[2] = &IX; m_Z80Processor.pFDPairs[2] = &IY;
 	m_Z80Processor.pPairs[3] = m_Z80Processor.pDDPairs[3] = m_Z80Processor.pFDPairs[3] = &SP;
 	m_Z80Processor.pPairs[4] = m_Z80Processor.pDDPairs[4] = m_Z80Processor.pFDPairs[4] = &AF;
-	/*m_tapeBit = 0; */m_defaultPortFal = 0xFF;
+	void** pRegisters = m_Z80Processor.pRegisters;
+	m_defaultPortFal = 0xFF;
 	rp2040.fifo.push(RESET);
-	DBG_PRINTLN(sizeof(m_Z80Processor));
 }
 
 void ZXSpectrum::loopZ80()
@@ -1730,9 +1730,10 @@ void ZXSpectrum::loopZ80()
 	uint64_t startTime = micros();
 	int32_t usedCycles;
 	rp2040.fifo.push(START_FRAME);
+	intZ80();
 	while (m_Z80Processor.tCount < LOOPCYCLES)
 	{
-		if (m_Z80Processor.tCount < IRQ_LENGTH) intZ80();
+//		if (m_Z80Processor.tCount < IRQ_LENGTH) intZ80();
 		usedCycles = m_Z80Processor.tCount;
 		stepZ80();
 		usedCycles = m_Z80Processor.tCount - usedCycles;

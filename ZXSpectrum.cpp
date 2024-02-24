@@ -65,8 +65,7 @@ void ZXSpectrum::drawLine(int posY)
 
 void ZXSpectrum::intZ80()
 {
-	if (m_Z80Processor.skipINT) return;
-	if (IFF1 && m_Z80Processor.tCount < IRQ_LENGTH)
+	if (IFF1 && !m_Z80Processor.skipINT)
 	{
 		if (m_Z80Processor.halted)
 		{
@@ -1721,7 +1720,7 @@ void ZXSpectrum::resetZ80()
 	m_Z80Processor.pPairs[3] = m_Z80Processor.pDDPairs[3] = m_Z80Processor.pFDPairs[3] = &SP;
 	m_Z80Processor.pPairs[4] = m_Z80Processor.pDDPairs[4] = m_Z80Processor.pFDPairs[4] = &AF;
 	void** pRegisters = m_Z80Processor.pRegisters;
-	m_defaultPortFal = 0xFF;
+	/*m_tapeBit = 0; */m_defaultPortFal = 0xFF;
 	rp2040.fifo.push(RESET);
 }
 
@@ -1730,10 +1729,9 @@ void ZXSpectrum::loopZ80()
 	uint64_t startTime = micros();
 	int32_t usedCycles;
 	rp2040.fifo.push(START_FRAME);
-	intZ80();
 	while (m_Z80Processor.tCount < LOOPCYCLES)
 	{
-//		if (m_Z80Processor.tCount < IRQ_LENGTH) intZ80();
+		if (m_Z80Processor.tCount < IRQ_LENGTH) intZ80();
 		usedCycles = m_Z80Processor.tCount;
 		stepZ80();
 		usedCycles = m_Z80Processor.tCount - usedCycles;

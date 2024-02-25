@@ -853,6 +853,7 @@ void ZXSpectrum::stepZ80()
 			m_Z80Processor.memptr.b.l = wordtemp + 1;
 			m_Z80Processor.memptr.b.h = A;
 			writeMem(wordtemp, A);
+//			DBG_PRINTLN(m_Z80Processor.memptr.w);
 			break;
 		}
 		case LD_INDIRECT_HL_N:				/*!*/
@@ -1353,19 +1354,43 @@ void ZXSpectrum::stepZ80()
 		}
 		case RLD_RRD:
 		{
+			//if (opcode == 0x6F)
+			//{
+			//	uint8_t bytetemp = readMem(HL);
+			//	contendedAccess(HL, 1); contendedAccess(HL, 1);
+			//	contendedAccess(HL, 1); contendedAccess(HL, 1);
+			//	writeMem(HL, (bytetemp << 4) | (A & 0x0f));
+			//	A = (A & 0xf0) | (bytetemp >> 4);
+			//	FL = (FL & FLAG_C) | sz53pTable[A];
+			//	Q = FL;
+			//	m_Z80Processor.memptr.w = HL + 1;
+			//}
+			//else
+			//{
+			//	uint8_t bytetemp = readMem(HL);
+			//	contendedAccess(HL, 1); contendedAccess(HL, 1);
+			//	contendedAccess(HL, 1); contendedAccess(HL, 1);
+			//	writeMem(HL, (A << 4) | (bytetemp >> 4));
+			//	A = (A & 0xf0) | (bytetemp & 0x0f);
+			//	FL = (FL & FLAG_C) | sz53pTable[A];
+			//	Q = FL;
+			//	m_Z80Processor.memptr.w = HL + 1;
+			//}
 			uint8_t bytetemp = readMem(HL);
 			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
 			if (opcode == 0x6F)
 			{
-				writeMem(HL, (bytetemp << 4) | (A & 0x0f));
-				A = (A & 0xf0) | (bytetemp >> 4);
+				writeMem(HL, (bytetemp << 4) | (A & 0x0F));
+				A = (A & 0xF0) | (bytetemp >> 4);
 			}
 			else
 			{
 				writeMem(HL, (A << 4) | (bytetemp >> 4));
-				A = (A & 0xf0) | (bytetemp & 0x0f);
+				A = (A & 0xF0) | (bytetemp & 0x0F);
 			}
 			FL = (FL & FLAG_C) | sz53pTable[A];
+			//FL &= ~(FLAG_3 | FLAG_5);
+			//FL |= (A & (FLAG_3 | FLAG_5));
 			Q = FL;
 			m_Z80Processor.memptr.w = HL + 1;
 			break;
@@ -1425,15 +1450,20 @@ void ZXSpectrum::stepZ80()
 			uint8_t bytetemp = A - value;
 			uint8_t lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
 			if (opcode == 0xA1)
+			{
 				HL++;
+				m_Z80Processor.memptr.w++;
+			}
 			else
+			{
 				HL--;
+				m_Z80Processor.memptr.w--;
+			}
 			BC--;
 			FL = (FL & FLAG_C) | (BC ? (FLAG_V | FLAG_N) : FLAG_N) | halfcarrySubTable[lookup] | (bytetemp ? 0 : FLAG_Z) | (bytetemp & FLAG_S);
 			if (FL & FLAG_H) bytetemp--;
 			FL |= (bytetemp & FLAG_3) | ((bytetemp & 0x02) ? FLAG_5 : 0);
 			Q = FL;
-			m_Z80Processor.memptr.w++;
 			break;
 		}
 		case INI_IND:
@@ -1638,7 +1668,6 @@ void ZXSpectrum::stepZ80()
 		case DD_PREFIX:
 		{
 			contendedAccess(PC, 4);
-			uint8_t prevOpcode = opcode;
 			opcode = m_pZXMemory[PC];
 			instruction = instructionTable[opcode];
 			PC++;
@@ -1656,7 +1685,6 @@ void ZXSpectrum::stepZ80()
 		case FD_PREFIX:
 		{
 			contendedAccess(PC, 4);
-			uint8_t prevOpcode = opcode;
 			opcode = m_pZXMemory[PC];
 			instruction = instructionTable[opcode];
 			PC++;
@@ -1674,6 +1702,7 @@ void ZXSpectrum::stepZ80()
 		default:
 			break;
 		}
+//		if (m_Z80Processor.memptr.w == 4111) DBG_PRINTF("%02X %04X %d\n", opcode, PC, m_Z80Processor.skipINT);
 	} while (repeatLoop);
 }
 /// Public
@@ -1719,8 +1748,7 @@ void ZXSpectrum::resetZ80()
 	m_Z80Processor.pPairs[2] = &HL; m_Z80Processor.pDDPairs[2] = &IX; m_Z80Processor.pFDPairs[2] = &IY;
 	m_Z80Processor.pPairs[3] = m_Z80Processor.pDDPairs[3] = m_Z80Processor.pFDPairs[3] = &SP;
 	m_Z80Processor.pPairs[4] = m_Z80Processor.pDDPairs[4] = m_Z80Processor.pFDPairs[4] = &AF;
-	void** pRegisters = m_Z80Processor.pRegisters;
-	/*m_tapeBit = 0; */m_defaultPortFal = 0xFF;
+	m_defaultPortFal = 0xFF;
 	rp2040.fifo.push(RESET);
 }
 

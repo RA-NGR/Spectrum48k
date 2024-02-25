@@ -75,6 +75,7 @@ bool readTAPSection(File& file)
 
 void loop()
 {
+	bool trace = false;
 	if (g_sysMode == modeEmulator)
 	{
 #ifdef DBG
@@ -163,13 +164,13 @@ void loop()
 			}
 		}
 #ifdef DBG
-		uint32_t emulTime = g_zxEmulator.getEmulationTime(), maxTime = g_zxEmulator.getMaxEmulationTime();
-		loopCounter++;
-		if (loopCounter > 89)
-		{
-			DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
-			loopCounter = 0;
-		}
+		//uint32_t emulTime = g_zxEmulator.getEmulationTime(), maxTime = g_zxEmulator.getMaxEmulationTime();
+		//loopCounter++;
+		//if (loopCounter > 89)
+		//{
+		//	DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
+		//	loopCounter = 0;
+		//}
 #endif // DBG
 	}
 	else

@@ -1444,11 +1444,9 @@ void ZXSpectrum::stepZ80()
 		}
 		case CPI_CPD:
 		{
-			uint8_t value = readMem(HL);
+			uint8_t value = readMem(HL), bytetemp = A - value, lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
 			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
 			contendedAccess(HL, 1);
-			uint8_t bytetemp = A - value;
-			uint8_t lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
 			if (opcode == 0xA1)
 			{
 				HL++;
@@ -1464,6 +1462,10 @@ void ZXSpectrum::stepZ80()
 			if (FL & FLAG_H) bytetemp--;
 			FL |= (bytetemp & FLAG_3) | ((bytetemp & 0x02) ? FLAG_5 : 0);
 			Q = FL;
+			//if (opcode == 0xA1)
+			//	m_Z80Processor.memptr.w++;
+			//else
+			//	m_Z80Processor.memptr.w--;
 			break;
 		}
 		case INI_IND:
@@ -1540,9 +1542,7 @@ void ZXSpectrum::stepZ80()
 		}
 		case CPIR_CPDR: /* Test passed*/
 		{
-			uint8_t value = readMem(HL);
-			uint8_t bytetemp = A - value;
-			uint8_t lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
+			uint8_t value = readMem(HL), bytetemp = A - value, lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
 			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
 			contendedAccess(HL, 1);
 			BC--;

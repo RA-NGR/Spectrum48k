@@ -1354,28 +1354,6 @@ void ZXSpectrum::stepZ80()
 		}
 		case RLD_RRD:
 		{
-			//if (opcode == 0x6F)
-			//{
-			//	uint8_t bytetemp = readMem(HL);
-			//	contendedAccess(HL, 1); contendedAccess(HL, 1);
-			//	contendedAccess(HL, 1); contendedAccess(HL, 1);
-			//	writeMem(HL, (bytetemp << 4) | (A & 0x0f));
-			//	A = (A & 0xf0) | (bytetemp >> 4);
-			//	FL = (FL & FLAG_C) | sz53pTable[A];
-			//	Q = FL;
-			//	m_Z80Processor.memptr.w = HL + 1;
-			//}
-			//else
-			//{
-			//	uint8_t bytetemp = readMem(HL);
-			//	contendedAccess(HL, 1); contendedAccess(HL, 1);
-			//	contendedAccess(HL, 1); contendedAccess(HL, 1);
-			//	writeMem(HL, (A << 4) | (bytetemp >> 4));
-			//	A = (A & 0xf0) | (bytetemp & 0x0f);
-			//	FL = (FL & FLAG_C) | sz53pTable[A];
-			//	Q = FL;
-			//	m_Z80Processor.memptr.w = HL + 1;
-			//}
 			uint8_t bytetemp = readMem(HL);
 			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
 			if (opcode == 0x6F)
@@ -1389,8 +1367,6 @@ void ZXSpectrum::stepZ80()
 				A = (A & 0xF0) | (bytetemp & 0x0F);
 			}
 			FL = (FL & FLAG_C) | sz53pTable[A];
-			//FL &= ~(FLAG_3 | FLAG_5);
-			//FL |= (A & (FLAG_3 | FLAG_5));
 			Q = FL;
 			m_Z80Processor.memptr.w = HL + 1;
 			break;
@@ -1462,10 +1438,6 @@ void ZXSpectrum::stepZ80()
 			if (FL & FLAG_H) bytetemp--;
 			FL |= (bytetemp & FLAG_3) | ((bytetemp & 0x02) ? FLAG_5 : 0);
 			Q = FL;
-			//if (opcode == 0xA1)
-			//	m_Z80Processor.memptr.w++;
-			//else
-			//	m_Z80Processor.memptr.w--;
 			break;
 		}
 		case INI_IND:

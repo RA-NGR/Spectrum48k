@@ -1705,8 +1705,6 @@ void ZXSpectrum::resetZ80()
 {
 	stopTape();
 	m_Z80Processor = { 0 };
-	//AF = AF_ = 0xffff;
-	//SP = 0xffff;
 	m_maxEmulTime = 0;
 	m_Z80Processor.pRegisters[0] = m_Z80Processor.pDDRegisters[0] = m_Z80Processor.pFDRegisters[0] = &B;
 	m_Z80Processor.pRegisters[1] = m_Z80Processor.pDDRegisters[1] = m_Z80Processor.pFDRegisters[1] = &C;
@@ -1721,6 +1719,8 @@ void ZXSpectrum::resetZ80()
 	m_Z80Processor.pPairs[3] = m_Z80Processor.pDDPairs[3] = m_Z80Processor.pFDPairs[3] = &SP;
 	m_Z80Processor.pPairs[4] = m_Z80Processor.pDDPairs[4] = m_Z80Processor.pFDPairs[4] = &AF;
 	m_defaultPortFal = 0xFF;
+	AF = AF_ = 0xffff;
+	SP = 0xffff;
 	rp2040.fifo.push(RESET);
 }
 

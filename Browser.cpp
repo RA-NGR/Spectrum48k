@@ -397,8 +397,13 @@ void Browser::drawFooter()
 bool Browser::run()
 {
 	bool result = false;
-	if (!(SD.begin(SS, SPI_FULL_SPEED))) return result;
-	chDir();
+	if ((SD.begin(SS, SPI_FULL_SPEED)))
+		chDir();
+	else
+	{
+		m_selectionPos = m_browseFrom = 0;
+		m_browserWindow[12] = "            Нет SD-карты";
+	}
 	listFiles();
 	drawFooter();
 	while (true)
@@ -442,7 +447,7 @@ bool Browser::run()
 			delay(500);
 		}
 		if (m_pKeyboardInstance->getData(9) == 0x10) break;
-		if (m_pKeyboardInstance->getData(8) == 0x04)
+		if (m_pKeyboardInstance->getData(8) == 0x04 && m_selectionPos != 0)
 		{
 			m_selectionPos++;
 			if (m_selectionPos > 21 || m_browserWindow[m_selectionPos - 1] == "")
@@ -457,7 +462,7 @@ bool Browser::run()
 				delay(150);
 			listFiles();
 		}
-		if (m_pKeyboardInstance->getData(8) == 0x08)
+		if (m_pKeyboardInstance->getData(8) == 0x08 && m_selectionPos != 0)
 		{
 			m_selectionPos--;
 			if (m_selectionPos == 0)

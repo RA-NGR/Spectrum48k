@@ -242,422 +242,129 @@ void ZXSpectrum::stepZ80()
 		repeatLoop = false;
 		switch (instruction)
 		{
-		case NOP:
+		case ADD_HL_RR:						/*!*/
 		{
+			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
+			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
+			ADD16((*(uint16_t*)(pPairs[HL_IX_IY_INDEX])), (*(uint16_t*)(pPairs[dd(opcode)])));
 			break;
 		}
-		case SCF:
+		case ADC_8:				/*!*/
 		{
-			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (((last_Q ^ FL) | A) & (FLAG_3 | FLAG_5)) | FLAG_C;
-			Q = FL;
-			break;
-		}
-		case CCF:
-		{
-			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | ((FL & FLAG_C) ? FLAG_H : FLAG_C) | (((last_Q ^ FL) | A) & (FLAG_3 | FLAG_5));
-			Q = FL;
-			break;
-		}
-		case RLCA:
-		{
-			A = (A << 1) | (A >> 7);
-			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_C | FLAG_3 | FLAG_5));
-			Q = FL;
-			break;
-		}
-		case RRCA:
-		{
-			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (A & FLAG_C);
-			A = (A >> 1) | (A << 7);
-			FL |= (A & (FLAG_3 | FLAG_5));
-			Q = FL;
-			break;
-		}
-		case RLA:
-		{
-			uint8_t bytetemp = A;
-			A = (A << 1) | (FL & FLAG_C);
-			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_3 | FLAG_5)) | (bytetemp >> 7);
-			Q = FL;
-			break;
-		}
-		case RRA:
-		{
-			uint8_t bytetemp = A;
-			A = (A >> 1) | (FL << 7);
-			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_3 | FLAG_5)) | (bytetemp & FLAG_C);
-			Q = FL;
-			break;
-		}
-		case INC_R:							/*!*/
-		{
-			INC8((*(uint8_t*)(pRegisters[r(opcode)])));
-			break;
-		}
-		case INC_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
+			if (r_(opcode) == 0x06)
 			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				INC8(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				uint8_t bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				INC8(bytetemp);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case DEC_R:							/*!*/
-		{
-			DEC8((*(uint8_t*)(pRegisters[r(opcode)])));
-			break;
-		}
-		case DEC_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				DEC8(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				uint8_t bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				DEC8(bytetemp);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case LD_R_R:						/*!*/
-		{
-			(*(uint8_t*)(pRegisters[r(opcode)])) = (*(uint8_t*)(pRegisters[r_(opcode)]));
-			break;
-		}
-		case LD_R_N:						/*!*/
-		{
-			(*(uint8_t*)(pRegisters[r(opcode)])) = readMem(PC++);
-			break;
-		}
-		case LD_R_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r(opcode)])) = readMem(m_Z80Processor.memptr.w);
-			}
-			else
-				(*(uint8_t*)(pRegisters[r(opcode)])) = readMem((*(uint16_t*)(pPairs[HL_IX_IY_INDEX])));
-			break;
-		}
-		case LD_INDIRECT_HL_R:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				writeMem((*(uint16_t*)(pPairs[HL_IX_IY_INDEX])), (*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case HALT:
-		{
-			m_Z80Processor.halted = 1;
-			PC--;
-			break;
-		}
-		case ADD_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			ADD(bytetemp);
-			break;
-		}
-		case ADD_R:
-		{
-			ADD((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case ADD_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
-				ADD(bytetemp);
-			}
-			else
-			{
-				uint8_t bytetemp = readMem(HL);
-				ADD(bytetemp);
-			}
-			break;
-		}
-		case ADC_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			ADC(bytetemp);
-			break;
-		}
-		case ADC_R:							/*!*/
-		{
-			ADC((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case ADC_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+				}
+				else
+					bytetemp = readMem(HL);
 				ADC(bytetemp);
 			}
 			else
+				ADC((*(uint8_t*)(pRegisters[r_(opcode)])));
+			break;
+		}
+		case ADD_8:				/*!*/
+		{
+			if (r_(opcode) == 0x06)
 			{
-				uint8_t bytetemp = readMem(HL);
-				ADC(bytetemp);
-			}
-			break;
-		}
-		case SUB_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			SUB(bytetemp);
-			break;
-		}
-		case SUB_R:							/*!*/
-		{
-			SUB((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case SUB_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
-				SUB(bytetemp);
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+				}
+				else
+					bytetemp = readMem(HL);
+				ADD(bytetemp);
 			}
 			else
+				ADD((*(uint8_t*)(pRegisters[r_(opcode)])));
+			break;
+		}
+		case AND_8:				/*!*/
+		{
+			if (r_(opcode) == 0x06)
 			{
-				uint8_t bytetemp = readMem(HL);
-				SUB(bytetemp);
-			}
-			break;
-		}
-		case SBC_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			SBC(bytetemp);
-			break;
-		}
-		case SBC_R:							/*!*/
-		{
-			SBC((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case SBC_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
-				SBC(bytetemp);
-			}
-			else
-			{
-				uint8_t bytetemp = readMem(HL);
-				SBC(bytetemp);
-			}
-			break;
-		}
-		case AND_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			AND(bytetemp);
-			break;
-		}
-		case AND_R:							/*!*/
-		{
-			AND((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case AND_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+				}
+				else
+					bytetemp = readMem(HL);
 				AND(bytetemp);
 			}
 			else
+				AND((*(uint8_t*)(pRegisters[r_(opcode)])));
+			break;
+		}
+		case CP_8:				/*!*/
+		{
+			if (r_(opcode) == 0x06)
 			{
-				uint8_t bytetemp = readMem(HL);
-				AND(bytetemp);
-			}
-			break;
-		}
-		case XOR_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			XOR(bytetemp);
-			break;
-		}
-		case XOR_R:							/*!*/
-		{
-			XOR((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case XOR_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
-				XOR(bytetemp);
-			}
-			else
-			{
-				uint8_t bytetemp = readMem(HL);
-				XOR(bytetemp);
-			}
-			break;
-		}
-		case OR_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			OR(bytetemp);
-			break;
-		}
-		case OR_R:							/*!*/
-		{
-			OR((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case OR_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
-				OR(bytetemp);
-			}
-			else
-			{
-				uint8_t bytetemp = readMem(HL);
-				OR(bytetemp);
-			}
-			break;
-		}
-		case CPL:
-		{
-			A ^= 0xff;
-			FL = (FL & (FLAG_C | FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_3 | FLAG_5)) | (FLAG_N | FLAG_H);
-			Q = FL;
-			break;
-		}
-		case CP_N:
-		{
-			uint8_t bytetemp = readMem(PC++);
-			CP(bytetemp);
-			break;
-		}
-		case CP_R:							/*!*/
-		{
-			CP((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case CP_INDIRECT_HL:				/*!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
-				PC++;
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					CP(bytetemp);
+				}
+				else
+					bytetemp = readMem(HL);
 				CP(bytetemp);
 			}
 			else
+				CP((*(uint8_t*)(pRegisters[r_(opcode)])));
+			break;
+		}
+		case DEC_8:				/*!*/
+		{
+			if (r(opcode) == 0x06)
 			{
-				uint8_t bytetemp = readMem(HL);
-				CP(bytetemp);
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					DEC8(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					DEC8(bytetemp);
+					writeMem(HL, bytetemp);
+				}
 			}
-			break;
-		}
-		case PUSH_SS:						/*!*/
-		{
-			uint8_t index = dd(opcode);
-			if (index == 3) index++;
-			uint16_t tempword = (*(uint16_t*)(pPairs[index]));
-			contendedAccess(IR, 1);
-			PUSH16(tempword & 0xFF, tempword >> 8);
-			break;
-		}
-		case POP_SS:						/*!*/
-		{
-			uint8_t index = dd(opcode);
-			if (index == 3) index++;
-			POP16((*(uint8_t*)(pPairs[index])), (*((uint8_t*)(pPairs[index]) + 1)));
-			break;
-		}
-		case INC_RR:						/*!*/
-		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1);
-			(*(uint16_t*)(pPairs[dd(opcode)]))++;
+			else
+				DEC8((*(uint8_t*)(pRegisters[r(opcode)])));
 			break;
 		}
 		case DEC_RR:						/*!*/
@@ -666,194 +373,61 @@ void ZXSpectrum::stepZ80()
 			(*(uint16_t*)(pPairs[dd(opcode)]))--;
 			break;
 		}
-		case ADD_HL_RR:						/*!*/
+		case EX_INDIRECT_SP_HL:				/*!*/
 		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			ADD16((*(uint16_t*)(pPairs[HL_IX_IY_INDEX])), (*(uint16_t*)(pPairs[dd(opcode)])));
+			uint8_t bytetempl = readMem(SP);
+			uint8_t bytetemph = readMem(SP + 1);
+			contendedAccess(SP + 1, 1);
+			writeMem(SP + 1, (*(uint8_t*)(pRegisters[H_INDEX])));
+			writeMem(SP, (*(uint8_t*)(pRegisters[L_INDEX])));
+			contendedAccess(SP, 1); contendedAccess(SP, 1);
+			(*(uint8_t*)(pRegisters[L_INDEX])) = m_Z80Processor.memptr.b.l = bytetempl;
+			(*(uint8_t*)(pRegisters[H_INDEX])) = m_Z80Processor.memptr.b.h = bytetemph;
 			break;
 		}
-		case LD_RR_NN:						/*!*/
+		case INC_8:							/*!*/
 		{
-			(*(uint8_t*)(pPairs[dd(opcode)])) = readMem(PC++);
-			(*((uint8_t*)(pPairs[dd(opcode)]) + 1)) = readMem(PC++);
-			break;
-		}
-		case RET:
-		{
-			RET();
-			break;
-		}
-		case RET_CC:
-		{
-			contendedAccess(IR, 1);
-			if (CC(r(opcode)))
+			if (r(opcode) == 0x06)
 			{
-				RET();
-			}
-			break;
-		}
-		case CALL_NN:
-		{
-			m_Z80Processor.memptr.b.l = readMem(PC++);
-			m_Z80Processor.memptr.b.h = readMem(PC);
-			CALL();
-			break;
-		}
-		case CALL_CC_NN:
-		{
-			m_Z80Processor.memptr.b.l = readMem(PC++);
-			m_Z80Processor.memptr.b.h = readMem(PC);
-			if (CC(r(opcode)))
-			{
-				CALL();
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					INC8(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					INC8(bytetemp);
+					writeMem(HL, bytetemp);
+				}
 			}
 			else
-			{
-				PC++;
-			}
+				INC8((*(uint8_t*)(pRegisters[r(opcode)])));
 			break;
 		}
-		case JP_NN:
-		{
-			m_Z80Processor.memptr.b.l = readMem(PC++);
-			m_Z80Processor.memptr.b.h = readMem(PC);
-			JP();
-			break;
-		}
-		case JP_CC_NN:
-		{
-			m_Z80Processor.memptr.b.l = readMem(PC++);
-			m_Z80Processor.memptr.b.h = readMem(PC);
-			if (CC(r(opcode)))
-			{
-				JP();
-			}
-			else
-			{
-				PC++;
-			}
-			break;
-		}
-		case DJNZ_E:
-		{
-			contendedAccess(IR, 1);
-			B--;
-			if (B)
-			{
-				JR();
-			}
-			else
-			{
-				contendedAccess(PC, 3);
-				PC++;
-			}
-			break;
-		}
-		case JR_DD_E:
-		{
-			if (CC(q(opcode)))
-			{
-				JR();
-			}
-			else
-			{
-				contendedAccess(PC, 3);
-				PC++;
-			}
-			break;
-		}
-		case JR_E:
-		{
-			JR();
-			break;
-		}
-		case RST_P:
-		{
-			contendedAccess(IR, 1);
-			RST(rstTable[r(opcode)]);
-			break;
-		}
-		case EX_AF_AF_PRIME:
-		{
-			/* Tape saving trap: note this traps the EX AF,AF' at #04d0, not
-		   #04d1 as PC has already been incremented
-		   0x76 - Timex 2068 save routine in EXROM
-				   if (PC == 0x04d1 || PC == 0x0077) {
-					   if (tape_save_trap() == 0) break;*/
-			uint16_t wordtemp = AF;
-			AF = AF_;
-			AF_ = wordtemp;
-			break;
-		}
-		case DI:
-		{
-			IFF1 = IFF2 = 0;
-			break;
-		}
-		case EI:
-		{
-			IFF1 = IFF2 = 1;
-			m_Z80Processor.skipINT = true;
-			break;
-		}
-		case LD_SP_HL:						/*!*/
+		case INC_RR:						/*!*/
 		{
 			contendedAccess(IR, 1); contendedAccess(IR, 1);
-			SP = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX]));
+			(*(uint16_t*)(pPairs[dd(opcode)]))++;
 			break;
 		}
-		case LD_INDIRECT_NN_HL:				/*!*/
+		case JP_HL:							/*!*/
 		{
-			LD16_NNRR((*(uint8_t*)(pRegisters[L_INDEX])), (*(uint8_t*)(pRegisters[H_INDEX])));
+			PC = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX]));
 			break;
 		}
 		case LD_HL_INDIRECT_NN:				/*!*/
 		{
 			LD16_RRNN((*(uint8_t*)(pRegisters[L_INDEX])), (*(uint8_t*)(pRegisters[H_INDEX])));
-			break;
-		}
-		case LD_A_INDIRECT_BC:
-		{
-			m_Z80Processor.memptr.w = BC + 1;
-			A = readMem(BC);
-			break;
-		}
-		case LD_INDIRECT_BC_A:
-		{
-			m_Z80Processor.memptr.b.l = BC + 1;
-			m_Z80Processor.memptr.b.h = A;
-			writeMem(BC, A);
-			break;
-		}
-		case LD_A_INDIRECT_DE:
-		{
-			m_Z80Processor.memptr.w = DE + 1;
-			A = readMem(DE);
-			break;
-		}
-		case LD_INDIRECT_DE_A:
-		{
-			m_Z80Processor.memptr.b.l = DE + 1;
-			m_Z80Processor.memptr.b.h = A;
-			writeMem(DE, A);
-			break;
-		}
-		case LD_A_INDIRECT_NN:
-		{
-			m_Z80Processor.memptr.b.l = readMem(PC++);
-			m_Z80Processor.memptr.b.h = readMem(PC++);
-			A = readMem(m_Z80Processor.memptr.w++);
-			break;
-		}
-		case LD_INDIRECT_NN_A:
-		{
-			uint16_t wordtemp = readMem(PC++);
-			wordtemp |= readMem(PC++) << 8;
-			m_Z80Processor.memptr.b.l = wordtemp + 1;
-			m_Z80Processor.memptr.b.h = A;
-			writeMem(wordtemp, A);
-//			DBG_PRINTLN(m_Z80Processor.memptr.w);
 			break;
 		}
 		case LD_INDIRECT_HL_N:				/*!*/
@@ -871,513 +445,198 @@ void ZXSpectrum::stepZ80()
 				writeMem(HL, readMem(PC++));
 			break;
 		}
-		case DAA:
+		case LD_INDIRECT_NN_HL:				/*!*/
 		{
-			uint8_t add = 0, carry = (FL & FLAG_C);
-			if ((FL & FLAG_H) || ((A & 0x0f) > 9)) add = 6;
-			if (carry || (A > 0x99)) add |= 0x60;
-			if (A > 0x99) carry = FLAG_C;
-			if (FL & FLAG_N)
-			{
-				SUB(add);
-			}
-			else
-			{
-				ADD(add);
-			}
-			FL = (FL & ~(FLAG_C | FLAG_P)) | carry | parityTable[A];
-			Q = FL;
+			LD16_NNRR((*(uint8_t*)(pRegisters[L_INDEX])), (*(uint8_t*)(pRegisters[H_INDEX])));
 			break;
 		}
-		case EXX:
-		{
-			uint16_t wordtemp = BC; BC = BC_; BC_ = wordtemp;
-			wordtemp = DE; DE = DE_; DE_ = wordtemp;
-			wordtemp = HL; HL = HL_; HL_ = wordtemp;
-			break;
-		}
-		case EX_DE_HL:
-		{
-			uint16_t wordtemp = DE; DE = HL; HL = wordtemp;
-			break;
-		}
-		case EX_INDIRECT_SP_HL:				/*!*/
-		{
-			uint8_t bytetempl = readMem(SP);
-			uint8_t bytetemph = readMem(SP + 1);
-			contendedAccess(SP + 1, 1);
-			writeMem(SP + 1, (*(uint8_t*)(pRegisters[H_INDEX])));
-			writeMem(SP, (*(uint8_t*)(pRegisters[L_INDEX])));
-			contendedAccess(SP, 1); contendedAccess(SP, 1);
-			(*(uint8_t*)(pRegisters[L_INDEX])) = m_Z80Processor.memptr.b.l = bytetempl;
-			(*(uint8_t*)(pRegisters[H_INDEX])) = m_Z80Processor.memptr.b.h = bytetemph;
-			break;
-		}
-		case JP_HL:							/*!*/
-		{
-			PC = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX]));
-			break;
-		}
-		case OUT_N_A:
-		{
-			uint8_t nn = readMem(PC++);
-			uint16_t outtemp = nn | (A << 8);
-			m_Z80Processor.memptr.b.h = A;
-			m_Z80Processor.memptr.b.l = (nn + 1);
-			writePort(outtemp, A);
-			break;
-		}
-		case IN_A_N:
-		{
-			uint16_t intemp = readMem(PC++) + (A << 8);
-			A = readPort(intemp);
-			m_Z80Processor.memptr.w = intemp + 1;
-			break;
-		}
-		case RLC_R:							/*!!*/
+		case LD_INDIRECT_HL_R:				/*!*/
 		{
 			if (pRegisters != m_Z80Processor.pRegisters)
 			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				RLC((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				uint8_t offset = readMem(PC);
+				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+				contendedAccess(PC, 1);
+				PC++;
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
 				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
 			}
 			else
-				RLC((*(uint8_t*)(pRegisters[r_(opcode)])));
+				writeMem((*(uint16_t*)(pPairs[HL_IX_IY_INDEX])), (*(uint8_t*)(pRegisters[r_(opcode)])));
 			break;
 		}
-		case RLC_INDIRECT_HL:				/*!!*/
+		case LD_R_N:						/*!*/
 		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
+			(*(uint8_t*)(pRegisters[r(opcode)])) = readMem(PC++);
+			break;
+		}
+		case LD_R_8:				/*!*/
+		{
+			if (r_(opcode) == 0x06)
 			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				RLC(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r(opcode)])) = readMem(m_Z80Processor.memptr.w);
+				}
+				else
+					(*(uint8_t*)(pRegisters[r(opcode)])) = readMem((*(uint16_t*)(pPairs[HL_IX_IY_INDEX])));
 			}
 			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				RLC(bytetemp);
-				writeMem(HL, bytetemp);
-			}
+				(*(uint8_t*)(pRegisters[r(opcode)])) = (*(uint8_t*)(pRegisters[r_(opcode)]));
 			break;
 		}
-		case RRC_R:							/*!!*/
+		case LD_RR_NN:						/*!*/
 		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				RRC((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				RRC((*(uint8_t*)(pRegisters[r_(opcode)])));
+			(*(uint8_t*)(pPairs[dd(opcode)])) = readMem(PC++);
+			(*((uint8_t*)(pPairs[dd(opcode)]) + 1)) = readMem(PC++);
 			break;
 		}
-		case RRC_INDIRECT_HL:				/*!!*/
+		case LD_SP_HL:						/*!*/
 		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				RRC(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				RRC(bytetemp);
-				writeMem(HL, bytetemp);
-			}
+			contendedAccess(IR, 1); contendedAccess(IR, 1);
+			SP = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX]));
 			break;
 		}
-		case RL_R:							/*!!*/
+		case OR_8:				/*!*/
 		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				RL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				RL((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case RL_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				RL(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				RL(bytetemp);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case RR_R:							/*!!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				RR((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				RR((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case RR_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				RR(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				RR(bytetemp);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case SRA_R:							/*!!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				SRA((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				SRA((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case SRA_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				SRA(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				SRA(bytetemp);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case SLA_R:							/*!!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				SLA((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				SLA((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case SLA_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				SLA(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				SLA(bytetemp);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case SRL_R:							/*!!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				SRL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				SRL((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case SRL_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				SRL(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				SRL(bytetemp);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case SLL_R:							/*!!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				SLL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				SLL((*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case SLL_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				SLL(bytetemp);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-				SLL(bytetemp);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case BIT_B_R:						/*!!*/
-		{
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				uint8_t bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				BIT_MEMPTR(r(opcode), bytetemp);
-			}
-			else
-				BIT_REG(r(opcode), (*(uint8_t*)(pRegisters[r_(opcode)])));
-			break;
-		}
-		case BIT_B_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w);
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-			}
-			else
-			{
-				bytetemp = readMem(HL);
-				contendedAccess(HL, 1);
-			}
-			BIT_MEMPTR(r(opcode), bytetemp);
-			break;
-		}
-		case RES_B_R:						/*!!*/
-		{
-			uint8_t bitMask = 1 << r(opcode);
-			bitMask ^= 0xFF;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w) & bitMask;
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				(*(uint8_t*)(pRegisters[r_(opcode)])) &= bitMask;
-			break;
-		}
-		case RES_B_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bitMask = 1 << r(opcode), bytetemp;
-			bitMask ^= 0xFF;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w) & bitMask;
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL) & bitMask;
-				contendedAccess(HL, 1);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case SET_B_R:						/*!!*/
-		{
-			uint8_t bitMask = 1 << r(opcode);
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w) | bitMask;
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-			}
-			else
-				(*(uint8_t*)(pRegisters[r_(opcode)])) |= bitMask;
-			break;
-		}
-		case SET_B_INDIRECT_HL:				/*!!*/
-		{
-			uint8_t bitMask = 1 << r(opcode), bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				bytetemp = readMem(m_Z80Processor.memptr.w) | bitMask;
-				contendedAccess(m_Z80Processor.memptr.w, 1);
-				writeMem(m_Z80Processor.memptr.w, bytetemp);
-			}
-			else
-			{
-				bytetemp = readMem(HL) | bitMask;
-				contendedAccess(HL, 1);
-				writeMem(HL, bytetemp);
-			}
-			break;
-		}
-		case ED_PREFIX:
-		{
-			contendedAccess(PC, 4);
-			opcode = m_pZXMemory[PC];
-			instruction = edInstructionTable[opcode];
-			PC++;
-			R++;
-			repeatLoop = true;
-			break;
-		}
-		case IN_R_C:
-		{
-			if (r(opcode) != 0b110)
-			{
-				INP((*(uint8_t*)(pRegisters[r(opcode)])), BC);
-			}
-			else
+			if (r_(opcode) == 0x06)
 			{
 				uint8_t bytetemp;
-				INP(bytetemp, BC);
-			}
-			break;
-		}
-		case OUT_C_R:
-		{
-			if (r(opcode) != 0b110)
-			{
-				writePort(BC, (*(uint8_t*)(pRegisters[r(opcode)])));
-			}
-			else
-				writePort(BC, 0);
-			m_Z80Processor.memptr.w = BC + 1;
-			break;
-		}
-		case SBC_HL_RR:
-		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			SBC16((*(uint16_t*)(pPairs[dd(opcode)])));
-			break;
-		}
-		case ADC_HL_RR:
-		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			ADC16((*(uint16_t*)(pPairs[dd(opcode)])));
-			break;
-			break;
-		}
-		case LD_INDIRECT_NN_RR:				/*!*/
-		{
-			LD16_NNRR((*(uint8_t*)(pPairs[dd(opcode)])), (*((uint8_t*)(pPairs[dd(opcode)]) + 1)));
-			break;
-		}
-		case LD_RR_INDIRECT_NN:				/*!*/
-		{
-			LD16_RRNN((*(uint8_t*)(pPairs[dd(opcode)])), (*((uint8_t*)(pPairs[dd(opcode)]) + 1)));
-			break;
-		}
-		case NEG:
-		{
-			uint8_t bytetemp = A;
-			A = 0;
-			SUB(bytetemp);
-			break;
-		}
-		case RETI_RETN:
-		{
-			IFF1 = IFF2;
-			RET();
-			break;
-		}
-		case RLD_RRD:
-		{
-			uint8_t bytetemp = readMem(HL);
-			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
-			if (opcode == 0x6F)
-			{
-				writeMem(HL, (bytetemp << 4) | (A & 0x0F));
-				A = (A & 0xF0) | (bytetemp >> 4);
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+				}
+				else
+					bytetemp = readMem(HL);
+				OR(bytetemp);
 			}
 			else
-			{
-				writeMem(HL, (A << 4) | (bytetemp >> 4));
-				A = (A & 0xF0) | (bytetemp & 0x0F);
-			}
-			FL = (FL & FLAG_C) | sz53pTable[A];
-			Q = FL;
-			m_Z80Processor.memptr.w = HL + 1;
+				OR((*(uint8_t*)(pRegisters[r_(opcode)])));
 			break;
 		}
-		case LD_I_A_LD_R_A:
+		case POP_SS:						/*!*/
 		{
+			uint8_t index = dd(opcode);
+			if (index == 3) index++;
+			POP16((*(uint8_t*)(pPairs[index])), (*((uint8_t*)(pPairs[index]) + 1)));
+			break;
+		}
+		case PUSH_SS:						/*!*/
+		{
+			uint8_t index = dd(opcode);
+			if (index == 3) index++;
+			uint16_t tempword = (*(uint16_t*)(pPairs[index]));
 			contendedAccess(IR, 1);
-			if (opcode == 0x47)
-				I = A;
+			PUSH16(tempword & 0xFF, tempword >> 8);
+			break;
+		}
+		case SBC_8:				/*!*/
+		{
+			if (r_(opcode) == 0x06)
+			{
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+				}
+				else
+					bytetemp = readMem(HL);
+				SBC(bytetemp);
+			}
 			else
-				R = R7 = A;
+				SBC((*(uint8_t*)(pRegisters[r_(opcode)])));
+			break;
+		}
+		case SUB_8:				/*!*/
+		{
+			if (r_(opcode) == 0x06)
+			{
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+				}
+				else
+					bytetemp = readMem(HL);
+				SUB(bytetemp);
+			}
+			else
+				SUB((*(uint8_t*)(pRegisters[r_(opcode)])));
+			break;
+		}
+		case XOR_8:				/*!*/
+		{
+			if (r_(opcode) == 0x06)
+			{
+				uint8_t bytetemp;
+				if (pRegisters != m_Z80Processor.pRegisters)
+				{
+					uint8_t offset = readMem(PC);
+					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
+					contendedAccess(PC, 1);
+					PC++;
+					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+				}
+				else
+					bytetemp = readMem(HL);
+				XOR(bytetemp);
+			}
+			else
+				XOR((*(uint8_t*)(pRegisters[r_(opcode)])));
+			break;
+		}
+		case LD_A_INDIRECT:
+		{
+			if (dd(opcode) == 0x03)
+			{
+				m_Z80Processor.memptr.b.l = readMem(PC++);
+				m_Z80Processor.memptr.b.h = readMem(PC++);
+				A = readMem(m_Z80Processor.memptr.w++);
+			}
+			else
+			{
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[dd(opcode)])) + 1;
+				A = readMem(*(uint16_t*)(pPairs[dd(opcode)]));
+			}
+			break;
+		}
+		case LD_INDIRECT_A:
+		{
+			if (dd(opcode) == 0x03)
+			{
+				uint16_t wordtemp = readMem(PC++);
+				wordtemp |= readMem(PC++) << 8;
+				m_Z80Processor.memptr.b.l = wordtemp + 1;
+				m_Z80Processor.memptr.b.h = A;
+				writeMem(wordtemp, A);
+			}
+			else
+			{
+				m_Z80Processor.memptr.b.l = (*(uint16_t*)(pPairs[dd(opcode)])) + 1;
+				m_Z80Processor.memptr.b.h = A;
+				writeMem(*(uint16_t*)(pPairs[dd(opcode)]), A);
+			}
 			break;
 		}
 		case LD_A_I_LD_A_R:
@@ -1391,12 +650,47 @@ void ZXSpectrum::stepZ80()
 			Q = FL;
 			break;
 		}
-		case IM_N:
+		case LD_I_A_LD_R_A:
 		{
-			if (q(opcode) < 0x02)
-				IM = 0;
+			contendedAccess(IR, 1);
+			if (opcode == 0x47)
+				I = A;
 			else
-				IM = q(opcode) - 1;
+				R = R7 = A;
+			break;
+		}
+		case LD_RR_INDIRECT_NN:				/*!*/
+		{
+			LD16_RRNN((*(uint8_t*)(pPairs[dd(opcode)])), (*((uint8_t*)(pPairs[dd(opcode)]) + 1)));
+			break;
+		}
+		case LD_INDIRECT_NN_RR:				/*!*/
+		{
+			LD16_NNRR((*(uint8_t*)(pPairs[dd(opcode)])), (*((uint8_t*)(pPairs[dd(opcode)]) + 1)));
+			break;
+		}
+		case EX_DE_HL:
+		{
+			uint16_t wordtemp = DE; DE = HL; HL = wordtemp;
+			break;
+		}
+		case EX_AF_AF_PRIME:
+		{
+			/* Tape saving trap: note this traps the EX AF,AF' at #04d0, not
+		   #04d1 as PC has already been incremented
+		   0x76 - Timex 2068 save routine in EXROM
+				   if (PC == 0x04d1 || PC == 0x0077) {
+					   if (tape_save_trap() == 0) break;*/
+			uint16_t wordtemp = AF;
+			AF = AF_;
+			AF_ = wordtemp;
+			break;
+		}
+		case EXX:
+		{
+			uint16_t wordtemp = BC; BC = BC_; BC_ = wordtemp;
+			wordtemp = DE; DE = DE_; DE_ = wordtemp;
+			wordtemp = HL; HL = HL_; HL_ = wordtemp;
 			break;
 		}
 		case LDI_LDD:
@@ -1415,71 +709,6 @@ void ZXSpectrum::stepZ80()
 			}
 			bytetemp += A;
 			FL = (FL & (FLAG_C | FLAG_Z | FLAG_S)) | (BC ? FLAG_V : 0) | (bytetemp & FLAG_3) | ((bytetemp & 0x02) ? FLAG_5 : 0);
-			Q = FL;
-			break;
-		}
-		case CPI_CPD:
-		{
-			uint8_t value = readMem(HL), bytetemp = A - value, lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
-			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
-			contendedAccess(HL, 1);
-			if (opcode == 0xA1)
-			{
-				HL++;
-				m_Z80Processor.memptr.w++;
-			}
-			else
-			{
-				HL--;
-				m_Z80Processor.memptr.w--;
-			}
-			BC--;
-			FL = (FL & FLAG_C) | (BC ? (FLAG_V | FLAG_N) : FLAG_N) | halfcarrySubTable[lookup] | (bytetemp ? 0 : FLAG_Z) | (bytetemp & FLAG_S);
-			if (FL & FLAG_H) bytetemp--;
-			FL |= (bytetemp & FLAG_3) | ((bytetemp & 0x02) ? FLAG_5 : 0);
-			Q = FL;
-			break;
-		}
-		case INI_IND:
-		{
-			contendedAccess(IR, 1);
-			uint8_t initemp = readPort(BC), initemp2;
-			writeMem(HL, initemp);
-			if (opcode == 0xA2)
-			{
-				m_Z80Processor.memptr.w = BC + 1;
-				HL++;
-				initemp2 = initemp + C + 1;
-			}
-			else
-			{
-				m_Z80Processor.memptr.w = BC - 1;
-				HL--;
-				initemp2 = initemp + C - 1;
-			}
-			B--;
-			FL = (initemp & 0x80 ? FLAG_N : 0) | ((initemp2 < initemp) ? FLAG_H | FLAG_C : 0) | (parityTable[(initemp2 & 0x07) ^ B] ? FLAG_P : 0) | sz53Table[B];
-			Q = FL;
-			break;
-		}
-		case OUTI_OUTD:
-		{
-			contendedAccess(IR, 1);
-			uint8_t outitemp = readMem(HL);
-			B--; /* This does happen first, despite what the specs say */
-			if (opcode == 0xA3)
-			{
-				m_Z80Processor.memptr.w = BC + 1;
-				HL++;
-			}
-			else
-			{
-				m_Z80Processor.memptr.w = BC - 1;
-				HL--;
-			}
-			writePort(BC, outitemp);
-			uint8_t outitemp2 = outitemp + L;
-			FL = (outitemp & 0x80 ? FLAG_N : 0) | ((outitemp2 < outitemp) ? FLAG_H | FLAG_C : 0) | (parityTable[(outitemp2 & 0x07) ^ B] ? FLAG_P : 0) | sz53Table[B];
 			Q = FL;
 			break;
 		}
@@ -1510,6 +739,28 @@ void ZXSpectrum::stepZ80()
 			{
 				HL--; DE--;
 			}
+			break;
+		}
+		case CPI_CPD:
+		{
+			uint8_t value = readMem(HL), bytetemp = A - value, lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
+			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
+			contendedAccess(HL, 1);
+			if (opcode == 0xA1)
+			{
+				HL++;
+				m_Z80Processor.memptr.w++;
+			}
+			else
+			{
+				HL--;
+				m_Z80Processor.memptr.w--;
+			}
+			BC--;
+			FL = (FL & FLAG_C) | (BC ? (FLAG_V | FLAG_N) : FLAG_N) | halfcarrySubTable[lookup] | (bytetemp ? 0 : FLAG_Z) | (bytetemp & FLAG_S);
+			if (FL & FLAG_H) bytetemp--;
+			FL |= (bytetemp & FLAG_3) | ((bytetemp & 0x02) ? FLAG_5 : 0);
+			Q = FL;
 			break;
 		}
 		case CPIR_CPDR: /* Test passed*/
@@ -1545,6 +796,664 @@ void ZXSpectrum::stepZ80()
 				HL--;
 			break;
 		}
+		case ADD_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			ADD(bytetemp);
+			break;
+		}
+		case ADC_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			ADC(bytetemp);
+			break;
+		}
+		case SUB_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			SUB(bytetemp);
+			break;
+		}
+		case SBC_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			SBC(bytetemp);
+			break;
+		}
+		case AND_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			AND(bytetemp);
+			break;
+		}
+		case XOR_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			XOR(bytetemp);
+			break;
+		}
+		case OR_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			OR(bytetemp);
+			break;
+		}
+		case CP_N:
+		{
+			uint8_t bytetemp = readMem(PC++);
+			CP(bytetemp);
+			break;
+		}
+		case ADC_HL_RR:
+		{
+			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
+			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
+			ADC16((*(uint16_t*)(pPairs[dd(opcode)])));
+			break;
+			break;
+		}
+		case SBC_HL_RR:
+		{
+			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
+			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
+			SBC16((*(uint16_t*)(pPairs[dd(opcode)])));
+			break;
+		}
+		case DAA:
+		{
+			uint8_t add = 0, carry = (FL & FLAG_C);
+			if ((FL & FLAG_H) || ((A & 0x0f) > 9)) add = 6;
+			if (carry || (A > 0x99)) add |= 0x60;
+			if (A > 0x99) carry = FLAG_C;
+			if (FL & FLAG_N)
+			{
+				SUB(add);
+			}
+			else
+			{
+				ADD(add);
+			}
+			FL = (FL & ~(FLAG_C | FLAG_P)) | carry | parityTable[A];
+			Q = FL;
+			break;
+		}
+		case CPL:
+		{
+			A ^= 0xff;
+			FL = (FL & (FLAG_C | FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_3 | FLAG_5)) | (FLAG_N | FLAG_H);
+			Q = FL;
+			break;
+		}
+		case NEG:
+		{
+			uint8_t bytetemp = A;
+			A = 0;
+			SUB(bytetemp);
+			break;
+		}
+		case CCF:
+		{
+			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | ((FL & FLAG_C) ? FLAG_H : FLAG_C) | (((last_Q ^ FL) | A) & (FLAG_3 | FLAG_5));
+			Q = FL;
+			break;
+		}
+		case SCF:
+		{
+			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (((last_Q ^ FL) | A) & (FLAG_3 | FLAG_5)) | FLAG_C;
+			Q = FL;
+			break;
+		}
+		case HALT:
+		{
+			m_Z80Processor.halted = 1;
+			PC--;
+			break;
+		}
+		case DI:
+		{
+			IFF1 = IFF2 = 0;
+			break;
+		}
+		case EI:
+		{
+			IFF1 = IFF2 = 1;
+			m_Z80Processor.skipINT = true;
+			break;
+		}
+		case IM_N:
+		{
+			if (q(opcode) < 0x02)
+				IM = 0;
+			else
+				IM = q(opcode) - 1;
+			break;
+		}
+		case RLCA:
+		{
+			A = (A << 1) | (A >> 7);
+			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_C | FLAG_3 | FLAG_5));
+			Q = FL;
+			break;
+		}
+		case RLA:
+		{
+			uint8_t bytetemp = A;
+			A = (A << 1) | (FL & FLAG_C);
+			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_3 | FLAG_5)) | (bytetemp >> 7);
+			Q = FL;
+			break;
+		}
+		case RRCA:
+		{
+			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (A & FLAG_C);
+			A = (A >> 1) | (A << 7);
+			FL |= (A & (FLAG_3 | FLAG_5));
+			Q = FL;
+			break;
+		}
+		case RRA:
+		{
+			uint8_t bytetemp = A;
+			A = (A >> 1) | (FL << 7);
+			FL = (FL & (FLAG_P | FLAG_Z | FLAG_S)) | (A & (FLAG_3 | FLAG_5)) | (bytetemp & FLAG_C);
+			Q = FL;
+			break;
+		}
+		case RLC_R:							/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					RLC(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					RLC((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					RLC(bytetemp);
+					writeMem(HL, bytetemp);
+				}
+				else
+					RLC((*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case RL_R:							/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					RL(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					RL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					RL(bytetemp);
+					writeMem(HL, bytetemp);
+				}
+				else
+					RL((*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case RRC_R:							/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					RRC(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					RRC((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					RRC(bytetemp);
+					writeMem(HL, bytetemp);
+				}
+				else
+					RRC((*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case RR_R:							/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					RR(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					RR((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					RR(bytetemp);
+					writeMem(HL, bytetemp);
+				}
+				else
+					RR((*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case SLA_R:							/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					SLA(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					SLA((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					SLA(bytetemp);
+					writeMem(HL, bytetemp);
+				}
+				else
+					SLA((*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case SLL_R:							/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					SLL(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					SLL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					SLL(bytetemp);
+					writeMem(HL, bytetemp);
+				}
+				else
+					SLL((*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case SRA_R:							/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					SRA(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					SRA((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					SRA(bytetemp);
+					writeMem(HL, bytetemp);
+				}
+				else
+					SRA((*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case SRL_R:							/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					SRL(bytetemp);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					SRL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					SRL(bytetemp);
+					writeMem(HL, bytetemp);
+				}
+				else
+					SRL((*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case RLD_RRD:
+		{
+			uint8_t bytetemp = readMem(HL);
+			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
+			if (opcode == 0x6F)
+			{
+				writeMem(HL, (bytetemp << 4) | (A & 0x0F));
+				A = (A & 0xF0) | (bytetemp >> 4);
+			}
+			else
+			{
+				writeMem(HL, (A << 4) | (bytetemp >> 4));
+				A = (A & 0xF0) | (bytetemp & 0x0F);
+			}
+			FL = (FL & FLAG_C) | sz53pTable[A];
+			Q = FL;
+			m_Z80Processor.memptr.w = HL + 1;
+			break;
+		}
+		case BIT_B_R:						/*!!*/
+		{
+			uint8_t bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				bytetemp = readMem(m_Z80Processor.memptr.w);
+				contendedAccess(m_Z80Processor.memptr.w, 1);
+				BIT_MEMPTR(r(opcode), bytetemp);
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL);
+					contendedAccess(HL, 1);
+					BIT_MEMPTR(r(opcode), bytetemp);
+				}
+				else
+					BIT_REG(r(opcode), (*(uint8_t*)(pRegisters[r_(opcode)])));
+			}
+			break;
+		}
+		case SET_B_R:						/*!!*/
+		{
+			uint8_t bitMask = 1 << r(opcode), bytetemp;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w) | bitMask;
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w) | bitMask;
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL) | bitMask;
+					contendedAccess(HL, 1);
+					writeMem(HL, bytetemp);
+				}
+				else
+					(*(uint8_t*)(pRegisters[r_(opcode)])) |= bitMask;
+			}
+			break;
+		}
+		case RES_B_R:						/*!!*/
+		{
+			uint8_t bitMask = 1 << r(opcode), bytetemp;
+			bitMask ^= 0xFF;
+			if (pRegisters != m_Z80Processor.pRegisters)
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(m_Z80Processor.memptr.w) & bitMask;
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					writeMem(m_Z80Processor.memptr.w, bytetemp);
+				}
+				else
+				{
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w) & bitMask;
+					contendedAccess(m_Z80Processor.memptr.w, 1);
+					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+				}
+			}
+			else
+			{
+				if (r_(opcode) == 0x06)
+				{
+					bytetemp = readMem(HL) & bitMask;
+					contendedAccess(HL, 1);
+					writeMem(HL, bytetemp);
+				}
+				else
+					(*(uint8_t*)(pRegisters[r_(opcode)])) &= bitMask;
+			}
+			break;
+		}
+		case JP_NN:
+		{
+			m_Z80Processor.memptr.b.l = readMem(PC++);
+			m_Z80Processor.memptr.b.h = readMem(PC);
+			if (opcode == 0xC3 || CC(r(opcode)))
+			{
+				JP();
+			}
+			else
+			{
+				PC++;
+			}
+			break;
+		}
+		case JR_E:
+		{
+			if (opcode == 0x18 || CC(q(opcode)))
+			{
+				JR();
+			}
+			else
+			{
+				contendedAccess(PC, 3);
+				PC++;
+			}
+			break;
+		}
+		case DJNZ_E:
+		{
+			contendedAccess(IR, 1);
+			B--;
+			if (B)
+			{
+				JR();
+			}
+			else
+			{
+				contendedAccess(PC, 3);
+				PC++;
+			}
+			break;
+		}
+		case CALL_NN:
+		{
+			m_Z80Processor.memptr.b.l = readMem(PC++);
+			m_Z80Processor.memptr.b.h = readMem(PC);
+			if (opcode == 0xCD || CC(r(opcode)))
+			{
+				CALL();
+			}
+			else
+			{
+				PC++;
+			}
+			break;
+		}
+		case RET:
+		{
+			contendedAccess(IR, 1);
+			if (opcode == 0xC9 || CC(r(opcode)))
+			{
+				RET();
+			}
+			break;
+		}
+		case RETI_RETN:
+		{
+			IFF1 = IFF2;
+			RET();
+			break;
+		}
+		case RST_P:
+		{
+			contendedAccess(IR, 1);
+			RST(rstTable[r(opcode)]);
+			break;
+		}
+		case IN_A_N:
+		{
+			uint16_t intemp = readMem(PC++) + (A << 8);
+			A = readPort(intemp);
+			m_Z80Processor.memptr.w = intemp + 1;
+			break;
+		}
+		case IN_R_C:
+		{
+			if (r(opcode) != 0b110)
+			{
+				INP((*(uint8_t*)(pRegisters[r(opcode)])), BC);
+			}
+			else
+			{
+				uint8_t bytetemp;
+				INP(bytetemp, BC);
+			}
+			break;
+		}
+		case INI_IND:
+		{
+			contendedAccess(IR, 1);
+			uint8_t initemp = readPort(BC), initemp2;
+			writeMem(HL, initemp);
+			if (opcode == 0xA2)
+			{
+				m_Z80Processor.memptr.w = BC + 1;
+				HL++;
+				initemp2 = initemp + C + 1;
+			}
+			else
+			{
+				m_Z80Processor.memptr.w = BC - 1;
+				HL--;
+				initemp2 = initemp + C - 1;
+			}
+			B--;
+			FL = (initemp & 0x80 ? FLAG_N : 0) | ((initemp2 < initemp) ? FLAG_H | FLAG_C : 0) | (parityTable[(initemp2 & 0x07) ^ B] ? FLAG_P : 0) | sz53Table[B];
+			Q = FL;
+			break;
+		}
 		case INIR_INDR:
 		{
 			contendedAccess(IR, 1);
@@ -1568,7 +1477,7 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(HL, 1);
 				PC -= 2;
 				FL |= ((B & FLAG_S) | (PCH & (FLAG_3 | FLAG_5)) | (initemp2 < initemp ? FLAG_C | (initemp & 0x80 ? ((B & 0x0F) == 0 ? FLAG_H : 0) | parityTable[((initemp2 & 0x07) ^ B) ^
-					  ((B - 1) & 7)] : ((B & 0xF) == 0xF ? FLAG_H : 0) | parityTable[((initemp2 & 0x07) ^ B) ^ ((B + 1) & 7)]) : parityTable[((initemp2 & 0x07) ^ B) ^ (B & 7)]));
+					((B - 1) & 7)] : ((B & 0xF) == 0xF ? FLAG_H : 0) | parityTable[((initemp2 & 0x07) ^ B) ^ ((B + 1) & 7)]) : parityTable[((initemp2 & 0x07) ^ B) ^ (B & 7)]));
 				m_Z80Processor.memptr.w = PC + 1;
 			}
 			else
@@ -1578,6 +1487,47 @@ void ZXSpectrum::stepZ80()
 				HL++;
 			else
 				HL--;
+			break;
+		}
+		case OUT_N_A:
+		{
+			uint8_t nn = readMem(PC++);
+			uint16_t outtemp = nn | (A << 8);
+			m_Z80Processor.memptr.b.h = A;
+			m_Z80Processor.memptr.b.l = (nn + 1);
+			writePort(outtemp, A);
+			break;
+		}
+		case OUT_C_R:
+		{
+			if (r(opcode) != 0b110)
+			{
+				writePort(BC, (*(uint8_t*)(pRegisters[r(opcode)])));
+			}
+			else
+				writePort(BC, 0);
+			m_Z80Processor.memptr.w = BC + 1;
+			break;
+		}
+		case OUTI_OUTD:
+		{
+			contendedAccess(IR, 1);
+			uint8_t outitemp = readMem(HL);
+			B--; /* This does happen first, despite what the specs say */
+			if (opcode == 0xA3)
+			{
+				m_Z80Processor.memptr.w = BC + 1;
+				HL++;
+			}
+			else
+			{
+				m_Z80Processor.memptr.w = BC - 1;
+				HL--;
+			}
+			writePort(BC, outitemp);
+			uint8_t outitemp2 = outitemp + L;
+			FL = (outitemp & 0x80 ? FLAG_N : 0) | ((outitemp2 < outitemp) ? FLAG_H | FLAG_C : 0) | (parityTable[(outitemp2 & 0x07) ^ B] ? FLAG_P : 0) | sz53Table[B];
+			Q = FL;
 			break;
 		}
 		case OTIR_OTDR:
@@ -1602,17 +1552,12 @@ void ZXSpectrum::stepZ80()
 				contendedAccess(BC, 1);
 				PC -= 2;
 				FL |= ((B & FLAG_S) | (PCH & (FLAG_3 | FLAG_5)) | (outitemp2 < outitemp ? FLAG_C | (outitemp & 0x80 ? ((B & 0x0F) == 0 ? FLAG_H : 0) | parityTable[((outitemp2 & 0x07) ^ B) ^
-					  ((B - 1) & 7)] : ((B & 0xF) == 0xF ? FLAG_H : 0) | parityTable[((outitemp2 & 0x07) ^ B) ^ ((B + 1) & 7)]) : parityTable[((outitemp2 & 0x07) ^ B) ^ (B & 7)]));
+					((B - 1) & 7)] : ((B & 0xF) == 0xF ? FLAG_H : 0) | parityTable[((outitemp2 & 0x07) ^ B) ^ ((B + 1) & 7)]) : parityTable[((outitemp2 & 0x07) ^ B) ^ (B & 7)]));
 				m_Z80Processor.memptr.w = PC + 1;
 			}
 			else
 				FL |= (FLAG_Z | (outitemp2 < outitemp ? (FLAG_H | FLAG_C) : 0) | parityTable[(outitemp2 & 0x07) ^ B]);
 			Q = FL;
-			break;
-		}
-		case ED_UNDEFINED:
-		{
-			DBG_PRINTLN("ED undefined");
 			break;
 		}
 		case CB_PREFIX:
@@ -1654,6 +1599,16 @@ void ZXSpectrum::stepZ80()
 				m_Z80Processor.skipINT = 1;
 			break;
 		}
+		case ED_PREFIX:
+		{
+			contendedAccess(PC, 4);
+			opcode = m_pZXMemory[PC];
+			instruction = edInstructionTable[opcode];
+			PC++;
+			R++;
+			repeatLoop = true;
+			break;
+		}
 		case FD_PREFIX:
 		{
 			contendedAccess(PC, 4);
@@ -1671,10 +1626,11 @@ void ZXSpectrum::stepZ80()
 				m_Z80Processor.skipINT = 1;
 			break;
 		}
+		case NOP:
+		case ED_UNDEFINED:
 		default:
 			break;
 		}
-//		if (m_Z80Processor.memptr.w == 4111) DBG_PRINTF("%02X %04X %d\n", opcode, PC, m_Z80Processor.skipINT);
 	} while (repeatLoop);
 }
 /// Public

@@ -47,6 +47,7 @@ void setup()
 #if defined(DBG)
 	Serial.begin(115200);
 	delay(1000);
+	DBG_PRINTF("Free mem: %d\n", rp2040.getFreeHeap());
 #endif // DBG
 	g_mainDisplay.init();
 	delay(100);
@@ -111,7 +112,7 @@ void loop()
 					case '5':
 						emulTime = g_zxEmulator.getEmulationTime();
 						maxTime = g_zxEmulator.getMaxEmulationTime();
-						DBG_PRINTF("Free mem: %d\n", rp2040.getFreeHeap());
+						DBG_PRINTF("Free mem: %6d, ", rp2040.getFreeHeap());
 						DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
 						break;
 					default:
@@ -164,13 +165,13 @@ void loop()
 			}
 		}
 #ifdef DBG
-		uint32_t emulTime = g_zxEmulator.getEmulationTime(), maxTime = g_zxEmulator.getMaxEmulationTime();
-		loopCounter++;
-		if (loopCounter > 89)
-		{
-			DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
-			loopCounter = 0;
-		}
+		//uint32_t emulTime = g_zxEmulator.getEmulationTime(), maxTime = g_zxEmulator.getMaxEmulationTime();
+		//loopCounter++;
+		//if (loopCounter > 89)
+		//{
+		//	DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
+		//	loopCounter = 0;
+		//}
 #endif // DBG
 	}
 	else

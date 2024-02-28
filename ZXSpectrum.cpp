@@ -450,7 +450,6 @@ void ZXSpectrum::stepZ80()
 			PUSH16(tempword & 0xFF, tempword >> 8);
 			break;
 		}
-
 		case AL_8:
 		{
 			if (r_(opcode) == 0x06)
@@ -562,184 +561,6 @@ void ZXSpectrum::stepZ80()
 			break;
 
 		}
-		//case ADD_8:				/*!*/
-		//{
-		//	if (r_(opcode) == 0x06)
-		//	{
-		//		uint8_t bytetemp;
-		//		if (pRegisters != m_Z80Processor.pRegisters)
-		//		{
-		//			uint8_t offset = readMem(PC);
-		//			contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-		//			contendedAccess(PC, 1);
-		//			PC++;
-		//			m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-		//			bytetemp = readMem(m_Z80Processor.memptr.w);
-		//		}
-		//		else
-		//			bytetemp = readMem(HL);
-		//		ADD(bytetemp);
-		//	}
-		//	else
-		//		ADD((*(uint8_t*)(pRegisters[r_(opcode)])));
-		//	break;
-		//}
-		//case ADC_8:				/*!*/
-		//{
-		//	if (r_(opcode) == 0x06)
-		//	{
-		//		uint8_t bytetemp;
-		//		if (pRegisters != m_Z80Processor.pRegisters)
-		//		{
-		//			uint8_t offset = readMem(PC);
-		//			contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-		//			contendedAccess(PC, 1);
-		//			PC++;
-		//			m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-		//			bytetemp = readMem(m_Z80Processor.memptr.w);
-		//		}
-		//		else
-		//			bytetemp = readMem(HL);
-		//		ADC(bytetemp);
-		//	}
-		//	else
-		//		ADC((*(uint8_t*)(pRegisters[r_(opcode)])));
-		//	break;
-		//}
-		//case SUB_8:				/*!*/
-		//{
-		//	if (r_(opcode) == 0x06)
-		//	{
-		//		uint8_t bytetemp;
-		//		if (pRegisters != m_Z80Processor.pRegisters)
-		//		{
-		//			uint8_t offset = readMem(PC);
-		//			contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-		//			contendedAccess(PC, 1);
-		//			PC++;
-		//			m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-		//			bytetemp = readMem(m_Z80Processor.memptr.w);
-		//		}
-		//		else
-		//			bytetemp = readMem(HL);
-		//		SUB(bytetemp);
-		//	}
-		//	else
-		//		SUB((*(uint8_t*)(pRegisters[r_(opcode)])));
-		//	break;
-		//}
-		//case SBC_8:				/*!*/
-		//{
-		//	if (r_(opcode) == 0x06)
-		//	{
-		//		uint8_t bytetemp;
-		//		if (pRegisters != m_Z80Processor.pRegisters)
-		//		{
-		//			uint8_t offset = readMem(PC);
-		//			contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-		//			contendedAccess(PC, 1);
-		//			PC++;
-		//			m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-		//			bytetemp = readMem(m_Z80Processor.memptr.w);
-		//		}
-		//		else
-		//			bytetemp = readMem(HL);
-		//		SBC(bytetemp);
-		//	}
-		//	else
-		//		SBC((*(uint8_t*)(pRegisters[r_(opcode)])));
-		//	break;
-		//}
-		//case AND_8:				/*!*/
-		//{
-		//	if (r_(opcode) == 0x06)
-		//	{
-		//		uint8_t bytetemp;
-		//		if (pRegisters != m_Z80Processor.pRegisters)
-		//		{
-		//			uint8_t offset = readMem(PC);
-		//			contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-		//			contendedAccess(PC, 1);
-		//			PC++;
-		//			m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-		//			bytetemp = readMem(m_Z80Processor.memptr.w);
-		//		}
-		//		else
-		//			bytetemp = readMem(HL);
-		//		AND(bytetemp);
-		//	}
-		//	else
-		//		AND((*(uint8_t*)(pRegisters[r_(opcode)])));
-		//	break;
-		//}
-		//case XOR_8:				/*!*/
-		//{
-		//	if (r_(opcode) == 0x06)
-		//	{
-		//		uint8_t bytetemp;
-		//		if (pRegisters != m_Z80Processor.pRegisters)
-		//		{
-		//			uint8_t offset = readMem(PC);
-		//			contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-		//			contendedAccess(PC, 1);
-		//			PC++;
-		//			m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-		//			bytetemp = readMem(m_Z80Processor.memptr.w);
-		//		}
-		//		else
-		//			bytetemp = readMem(HL);
-		//		XOR(bytetemp);
-		//	}
-		//	else
-		//		XOR((*(uint8_t*)(pRegisters[r_(opcode)])));
-		//	break;
-		//}
-		//case OR_8:				/*!*/
-		//{
-		//	if (r_(opcode) == 0x06)
-		//	{
-		//		uint8_t bytetemp;
-		//		if (pRegisters != m_Z80Processor.pRegisters)
-		//		{
-		//			uint8_t offset = readMem(PC);
-		//			contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-		//			contendedAccess(PC, 1);
-		//			PC++;
-		//			m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-		//			bytetemp = readMem(m_Z80Processor.memptr.w);
-		//		}
-		//		else
-		//			bytetemp = readMem(HL);
-		//		OR(bytetemp);
-		//	}
-		//	else
-		//		OR((*(uint8_t*)(pRegisters[r_(opcode)])));
-		//	break;
-		//}
-		//case CP_8:				/*!*/
-		//{
-		//	if (r_(opcode) == 0x06)
-		//	{
-		//		uint8_t bytetemp;
-		//		if (pRegisters != m_Z80Processor.pRegisters)
-		//		{
-		//			uint8_t offset = readMem(PC);
-		//			contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-		//			contendedAccess(PC, 1);
-		//			PC++;
-		//			m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
-		//			bytetemp = readMem(m_Z80Processor.memptr.w);
-		//			CP(bytetemp);
-		//		}
-		//		else
-		//			bytetemp = readMem(HL);
-		//		CP(bytetemp);
-		//	}
-		//	else
-		//		CP((*(uint8_t*)(pRegisters[r_(opcode)])));
-		//	break;
-		//}
-
 		case LD_A_INDIRECT:
 		{
 			if (dd(opcode) == 0x03)
@@ -930,7 +751,6 @@ void ZXSpectrum::stepZ80()
 				HL--;
 			break;
 		}
-
 		case AL_N:
 		{
 			uint8_t bytetemp = readMem(PC++);
@@ -981,56 +801,6 @@ void ZXSpectrum::stepZ80()
 			}
 			break;
 		}
-
-		//case ADD_N:
-		//{
-		//	uint8_t bytetemp = readMem(PC++);
-		//	ADD(bytetemp);
-		//	break;
-		//}
-		//case ADC_N:
-		//{
-		//	uint8_t bytetemp = readMem(PC++);
-		//	ADC(bytetemp);
-		//	break;
-		//}
-		//case SUB_N:
-		//{
-		//	uint8_t bytetemp = readMem(PC++);
-		//	SUB(bytetemp);
-		//	break;
-		//}
-		//case SBC_N:
-		//{
-		//	uint8_t bytetemp = readMem(PC++);
-		//	SBC(bytetemp);
-		//	break;
-		//}
-		//case AND_N:
-		//{
-		//	uint8_t bytetemp = readMem(PC++);
-		//	AND(bytetemp);
-		//	break;
-		//}
-		//case XOR_N:
-		//{
-		//	uint8_t bytetemp = readMem(PC++);
-		//	XOR(bytetemp);
-		//	break;
-		//}
-		//case OR_N:
-		//{
-		//	uint8_t bytetemp = readMem(PC++);
-		//	OR(bytetemp);
-		//	break;
-		//}
-		//case CP_N:
-		//{
-		//	uint8_t bytetemp = readMem(PC++);
-		//	CP(bytetemp);
-		//	break;
-		//}
-
 		case ADC_HL_RR:
 		{
 			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);

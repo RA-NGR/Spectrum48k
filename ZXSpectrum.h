@@ -6,10 +6,11 @@
 
 enum {
 	ADD_HL_RR,
-	ADC_8,
-	ADD_8,
-	AND_8,
-	CP_8,
+	AL_8,
+	//ADD_8,
+	//ADC_8,
+	//AND_8,
+	//CP_8,
 	DEC_8,
 	DEC_RR,
 	EX_INDIRECT_SP_HL,
@@ -24,12 +25,12 @@ enum {
 	LD_R_8,
 	LD_RR_NN,
 	LD_SP_HL,
-	OR_8,
+	//OR_8,
 	POP_SS,
 	PUSH_SS,
-	SBC_8,
-	SUB_8,
-	XOR_8,
+	//SBC_8,
+	//SUB_8,
+	//XOR_8,
 	CB_PREFIX,
 // ------------- End of DD/FD affected instructions --------
 	LD_A_INDIRECT,
@@ -45,14 +46,17 @@ enum {
 	LDIR_LDDR,
 	CPI_CPD,
 	CPIR_CPDR,
-	ADD_N,
-	ADC_N,
-	SUB_N,
-	SBC_N,
-	AND_N,
-	XOR_N,
-	OR_N,
-	CP_N,
+
+	AL_N,
+
+	//ADD_N,
+	//ADC_N,
+	//SUB_N,
+	//SBC_N,
+	//AND_N,
+	//XOR_N,
+	//OR_N,
+	//CP_N,
 	ADC_HL_RR,
 	SBC_HL_RR,
 	DAA,
@@ -118,57 +122,23 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) instructionTa
 	LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8,																		/* 0x68 - 0x6F */
 	LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, HALT,LD_INDIRECT_HL_R,  /* 0x70 - 0x77 */
 	LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8,																		/* 0x78 - 0x7F */
-	ADD_8, ADD_8, ADD_8, ADD_8, ADD_8, ADD_8, ADD_8, ADD_8,																				/* 0x80 - 0x87 */
-	ADC_8, ADC_8, ADC_8, ADC_8, ADC_8, ADC_8, ADC_8, ADC_8,																				/* 0x88 - 0x8F */
-	SUB_8, SUB_8, SUB_8, SUB_8, SUB_8, SUB_8, SUB_8, SUB_8,																				/* 0x90 - 0x97 */
-	SBC_8, SBC_8, SBC_8, SBC_8, SBC_8, SBC_8, SBC_8, SBC_8,																				/* 0x98 - 0x9F */
-	AND_8, AND_8, AND_8, AND_8, AND_8, AND_8, AND_8, AND_8,																				/* 0xA0 - 0xA7 */
-	XOR_8, XOR_8, XOR_8, XOR_8, XOR_8, XOR_8, XOR_8, XOR_8,																				/* 0xA8 - 0xAF */
-	OR_8, OR_8, OR_8, OR_8, OR_8, OR_8, OR_8, OR_8,																						/* 0xB0 - 0xB7 */
-	CP_8, CP_8, CP_8, CP_8, CP_8, CP_8, CP_8, CP_8,																						/* 0xB8 - 0xBF */
-	RET, POP_SS, JP_NN, JP_NN, CALL_NN, PUSH_SS, ADD_N, RST_P,																			/* 0xC0 - 0xC7 */
-	RET, RET, JP_NN, CB_PREFIX, CALL_NN, CALL_NN, ADC_N, RST_P,																			/* 0xC8 - 0xCF */
-	RET, POP_SS, JP_NN, OUT_N_A, CALL_NN, PUSH_SS, SUB_N, RST_P,																		/* 0xD0 - 0xD7 */
-	RET, EXX, JP_NN, IN_A_N, CALL_NN, DD_PREFIX, SBC_N, RST_P,																			/* 0xD8 - 0xDF */
-	RET, POP_SS, JP_NN, EX_INDIRECT_SP_HL, CALL_NN, PUSH_SS, AND_N, RST_P,																/* 0xE0 - 0xE7 */
-	RET, JP_HL, JP_NN, EX_DE_HL, CALL_NN, ED_PREFIX, XOR_N, RST_P,																		/* 0xE8 - 0xEF */
-	RET, POP_SS, JP_NN, DI, CALL_NN, PUSH_SS, OR_N, RST_P,																				/* 0xF0 - 0xF7 */
-	RET, LD_SP_HL, JP_NN, EI, CALL_NN, FD_PREFIX, CP_N, RST_P																			/* 0xF8 - 0xFF */
+	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0x80 - 0x87 */
+	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0x88 - 0x8F */
+	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0x90 - 0x97 */
+	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0x98 - 0x9F */
+	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0xA0 - 0xA7 */
+	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0xA8 - 0xAF */
+	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																						/* 0xB0 - 0xB7 */
+	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																						/* 0xB8 - 0xBF */
+	RET, POP_SS, JP_NN, JP_NN, CALL_NN, PUSH_SS, AL_N, RST_P,																			/* 0xC0 - 0xC7 */
+	RET, RET, JP_NN, CB_PREFIX, CALL_NN, CALL_NN, AL_N, RST_P,																			/* 0xC8 - 0xCF */
+	RET, POP_SS, JP_NN, OUT_N_A, CALL_NN, PUSH_SS, AL_N, RST_P,																		/* 0xD0 - 0xD7 */
+	RET, EXX, JP_NN, IN_A_N, CALL_NN, DD_PREFIX, AL_N, RST_P,																			/* 0xD8 - 0xDF */
+	RET, POP_SS, JP_NN, EX_INDIRECT_SP_HL, CALL_NN, PUSH_SS, AL_N, RST_P,																/* 0xE0 - 0xE7 */
+	RET, JP_HL, JP_NN, EX_DE_HL, CALL_NN, ED_PREFIX, AL_N, RST_P,																		/* 0xE8 - 0xEF */
+	RET, POP_SS, JP_NN, DI, CALL_NN, PUSH_SS, AL_N, RST_P,																				/* 0xF0 - 0xF7 */
+	RET, LD_SP_HL, JP_NN, EI, CALL_NN, FD_PREFIX, AL_N, RST_P																			/* 0xF8 - 0xFF */
 };
-//const uint8_t __attribute__((section(".time_critical." "tables"))) instructionTable[256] = {
-//	NOP, LD_RR_NN, LD_INDIRECT_BC_A, INC_RR, INC_R, DEC_R, LD_R_N, RLCA,																/* 0x00 - 0x07 */
-//	EX_AF_AF_PRIME, ADD_HL_RR, LD_A_INDIRECT_BC, DEC_RR, INC_R, DEC_R, LD_R_N, RRCA,													/* 0x08 - 0x0F */
-//	DJNZ_E, LD_RR_NN, LD_INDIRECT_DE_A, INC_RR, INC_R, DEC_R, LD_R_N, RLA,																/* 0x10 - 0x17 */
-//	JR_E, ADD_HL_RR, LD_A_INDIRECT_DE, DEC_RR, INC_R, DEC_R, LD_R_N, RRA,																/* 0x18 - 0x1F */
-//	JR_DD_E, LD_RR_NN, LD_INDIRECT_NN_HL, INC_RR, INC_R, DEC_R, LD_R_N, DAA,															/* 0x20 - 0x27 */
-//	JR_DD_E, ADD_HL_RR, LD_HL_INDIRECT_NN, DEC_RR, INC_R, DEC_R, LD_R_N, CPL,															/* 0x28 - 0x2F */
-//	JR_DD_E, LD_RR_NN, LD_INDIRECT_NN_A, INC_RR, INC_INDIRECT_HL, DEC_INDIRECT_HL, LD_INDIRECT_HL_N, SCF,								/* 0x30 - 0x37 */
-//	JR_DD_E, ADD_HL_RR, LD_A_INDIRECT_NN, DEC_RR, INC_R, DEC_R, LD_R_N, CCF,															/* 0x38 - 0x3F */
-//	LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_INDIRECT_HL, LD_R_R,															/* 0x40 - 0x47 */
-//	LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_INDIRECT_HL, LD_R_R,															/* 0x48 - 0x4F */
-//	LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_INDIRECT_HL, LD_R_R,															/* 0x50 - 0x57 */
-//	LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_INDIRECT_HL, LD_R_R,															/* 0x58 - 0x5F */
-//	LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_INDIRECT_HL, LD_R_R,															/* 0x60 - 0x67 */
-//	LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_INDIRECT_HL, LD_R_R,															/* 0x68 - 0x6F */
-//	LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, HALT,LD_INDIRECT_HL_R,  /* 0x70 - 0x77 */
-//	LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_R, LD_R_INDIRECT_HL, LD_R_R,															/* 0x78 - 0x7F */
-//	ADD_R, ADD_R, ADD_R, ADD_R, ADD_R, ADD_R, ADD_INDIRECT_HL, ADD_R,																	/* 0x80 - 0x87 */
-//	ADC_R, ADC_R, ADC_R, ADC_R, ADC_R, ADC_R, ADC_INDIRECT_HL, ADC_R,																	/* 0x88 - 0x8F */
-//	SUB_R, SUB_R, SUB_R, SUB_R, SUB_R, SUB_R, SUB_INDIRECT_HL, SUB_R,																	/* 0x90 - 0x97 */
-//	SBC_R, SBC_R, SBC_R, SBC_R, SBC_R, SBC_R, SBC_INDIRECT_HL, SBC_R,																	/* 0x98 - 0x9F */
-//	AND_R, AND_R, AND_R, AND_R, AND_R, AND_R, AND_INDIRECT_HL, AND_R,																	/* 0xA0 - 0xA7 */
-//	XOR_R, XOR_R, XOR_R, XOR_R, XOR_R, XOR_R, XOR_INDIRECT_HL, XOR_R,																	/* 0xA8 - 0xAF */
-//	OR_R, OR_R, OR_R, OR_R, OR_R, OR_R, OR_INDIRECT_HL, OR_R,																			/* 0xB0 - 0xB7 */
-//	CP_R, CP_R, CP_R, CP_R, CP_R, CP_R, CP_INDIRECT_HL, CP_R,																			/* 0xB8 - 0xBF */
-//	RET_CC, POP_SS, JP_CC_NN, JP_NN, CALL_CC_NN, PUSH_SS, ADD_N, RST_P,																	/* 0xC0 - 0xC7 */
-//	RET_CC, RET, JP_CC_NN, CB_PREFIX, CALL_CC_NN, CALL_NN, ADC_N, RST_P,																/* 0xC8 - 0xCF */
-//	RET_CC, POP_SS, JP_CC_NN, OUT_N_A, CALL_CC_NN, PUSH_SS, SUB_N, RST_P,																/* 0xD0 - 0xD7 */
-//	RET_CC, EXX, JP_CC_NN, IN_A_N, CALL_CC_NN, DD_PREFIX, SBC_N, RST_P,																	/* 0xD8 - 0xDF */
-//	RET_CC, POP_SS, JP_CC_NN, EX_INDIRECT_SP_HL, CALL_CC_NN, PUSH_SS, AND_N, RST_P,														/* 0xE0 - 0xE7 */
-//	RET_CC, JP_HL, JP_CC_NN, EX_DE_HL, CALL_CC_NN, ED_PREFIX, XOR_N, RST_P,																/* 0xE8 - 0xEF */
-//	RET_CC, POP_SS, JP_CC_NN, DI, CALL_CC_NN, PUSH_SS, OR_N, RST_P,																		/* 0xF0 - 0xF7 */
-//	RET_CC, LD_SP_HL, JP_CC_NN, EI, CALL_CC_NN, FD_PREFIX, CP_N, RST_P																	/* 0xF8 - 0xFF */
-//};
 const uint8_t __attribute__((section(".time_critical." "tables"))) cbInstructionTable[256] = {
 	RLC_R, RLC_R, RLC_R, RLC_R, RLC_R, RLC_R, RLC_R, RLC_R,					/* 0x00 - 0x07 */
 	RRC_R, RRC_R, RRC_R, RRC_R, RRC_R, RRC_R, RRC_R, RRC_R,					/* 0x08 - 0x0F */

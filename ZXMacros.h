@@ -71,6 +71,8 @@
 
 #define CC(cc)                                          ((FL ^ xorConditionTable[(cc)]) & andConditionTable[(cc)])
 
+#define AL_OPERATION_DECODE(opcode)                     r(opcode)
+
 #define CONTENDED 0x4000
 #define contendedAccess(address, time)                  { if ((address & 0xC000) == 0x4000 && m_Z80Processor.tCount > 14334 && m_Z80Processor.tCount < 57245) m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - 14335) % 224]; m_Z80Processor.tCount += (time); }
 //#define contendedAccess(address, time)                  { if ((address & 0xC000) == 0x4000 && m_Z80Processor.tCount > 14334 && m_Z80Processor.tCount < 57245){ divmod_result_t result = hw_divider_divmod_s32(m_Z80Processor.tCount - 14335, 224); m_Z80Processor.tCount += contPattern[to_remainder_s32(result)];} m_Z80Processor.tCount += (time); }

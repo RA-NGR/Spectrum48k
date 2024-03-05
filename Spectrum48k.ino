@@ -113,7 +113,7 @@ void loop()
 						emulTime = g_zxEmulator.getEmulationTime();
 						maxTime = g_zxEmulator.getMaxEmulationTime();
 						DBG_PRINTF("Free mem: %6d, ", rp2040.getFreeHeap());
-						DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
+						DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f), Overstates: %d\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime, g_zxEmulator.getOverstates());
 						break;
 					default:
 						break;

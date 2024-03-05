@@ -7,61 +7,125 @@ ZXSpectrum::~ZXSpectrum()
 
 void ZXSpectrum::drawLine(int posY)
 {
-	uint16_t posX, zxPixelMapAddr, zxColorAttribAddr, tftMemAddr;
-	uint8_t i, zxColorAttrib, zxPixelMap, zxBrightFlag, zxInkColor, zxPaperColor, bitPos;
-	int buffSwitch = (posY / DMA_BUFF_SIZE) & 1;
-	int buffOffset = (posY % DMA_BUFF_SIZE) * 320;
-
+	int posX, buffSwitch = (posY / DMA_BUFF_SIZE) & 1;
+	uint32_t* pScreenBuffer = m_pScreenBuffer[buffSwitch] + ((posY % DMA_BUFF_SIZE) * 160);
+	uint8_t* pPixelData = m_pZXMemory + 0x4000 + (((posY - 24) & 0x7) << 8) + (((posY - 24) & 0x38) << 2) + (((posY - 24) & 0xC0) << 5);
+	uint8_t* pAttrData = m_pZXMemory + 0x5800 + (((posY - 24) >> 3) << 5);
+	int flashAttr = (m_frameCounter >> 4) & 1;
 	for (posX = 0; posX < 4; posX++) // Left border
 	{
 		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
 		{
 			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
 		}
-		for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i) ^ 1) + buffOffset] = m_borderColor;
+		uint32_t borderColor = m_borderColor << 16 | m_borderColor;
+		*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
+		*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
 	}
-	for (posX = 0; posX < 32; posX++) // Main area
+	for (; posX < 32 + 4; posX++) // Main area
 	{
-		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 4 == m_borderColors[m_pbRIndex].x)
+		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
 		{
 			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
 		}
 		if (posY < 24 || posY > 215)
-			for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i + 32) ^ 1) + buffOffset] = m_borderColor;
+		{
+			uint32_t borderColor = m_borderColor << 16 | m_borderColor;
+			*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
+			*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
+		}
 		else
 		{
-			zxColorAttribAddr = 0x5800 + (((posY - 24) / 8) * 32) + posX; zxColorAttrib = m_pZXMemory[zxColorAttribAddr];
-			zxBrightFlag = (zxColorAttrib & 0x40) >> 3;
-			zxPixelMapAddr = 0x4000 + (((posY - 24) % 64) / 8) * 32 + ((posY - 24) % 8) * 256 + ((posY - 24) / 64) * 2048 + posX;
-			zxPixelMap = m_pZXMemory[zxPixelMapAddr] ^ ((zxColorAttrib & 0x80) ? ((m_frameCounter & 0x10) ? 255 : 0) : 0);
-			zxInkColor = zxColorAttrib & 0x07; zxPaperColor = (zxColorAttrib & 0x38) >> 3;
-			for (i = 0; i < 8; i++)
-			{
-				tftMemAddr = posX * 8 + i + 32;	bitPos = (0x80 >> i);
-				if ((zxPixelMap & bitPos) != 0)
-					m_pScreenBuffer[buffSwitch][tftMemAddr + buffOffset] = m_colorLookup[zxInkColor + zxBrightFlag];
-				else
-					m_pScreenBuffer[buffSwitch][tftMemAddr + buffOffset] = m_colorLookup[zxPaperColor + zxBrightFlag];
-			}
+			uint8_t attrData = *pAttrData++, pixelData = *pPixelData++ ^ m_colorInvertMask[(attrData >> 7) & flashAttr], 
+					bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
+			uint32_t bgColorMask, bgColor = m_colorsTable[bgColorIndex], fgColorMask, fgColor = m_colorsTable[fgColorIndex];
+			fgColorMask = m_pixelBitMask[(pixelData >> 6) & 3];	bgColorMask = ~fgColorMask;
+			*pScreenBuffer++ = (fgColorMask & fgColor) | (bgColorMask & bgColor);
+			fgColorMask = m_pixelBitMask[(pixelData >> 4) & 3];	bgColorMask = ~fgColorMask;
+			*pScreenBuffer++ = (fgColorMask & fgColor) | (bgColorMask & bgColor);
+			fgColorMask = m_pixelBitMask[(pixelData >> 2) & 3];	bgColorMask = ~fgColorMask;
+			*pScreenBuffer++ = (fgColorMask & fgColor) | (bgColorMask & bgColor);
+			fgColorMask = m_pixelBitMask[pixelData & 3]; bgColorMask = ~fgColorMask;
+			*pScreenBuffer++ = (fgColorMask & fgColor) | (bgColorMask & bgColor);
 		}
 	}
-	for (posX = 0; posX < 4; posX++) // Right border
+	for (; posX < 36 + 4; posX++) // Right border
 	{
-		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 36 == m_borderColors[m_pbRIndex].x)
+		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
 		{
 			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
 		}
-		for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i + 288) ^ 1) + buffOffset] = m_borderColor;
+		uint32_t borderColor = m_borderColor << 16 | m_borderColor;
+		*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
+		*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
 	}
-	for (posX = 0; posX < 16; posX++) // Retrace
+	for (; posX < 40 + 16; posX++) // Retrace
 	{
-		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 40 == m_borderColors[m_pbRIndex].x)
+		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
 		{
 			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
 		}
 	}
 	if (posY % DMA_BUFF_SIZE == DMA_BUFF_SIZE - 1) m_pDisplayInstance->drawBuffer(buffSwitch, 320 * DMA_BUFF_SIZE);
 }
+
+//void ZXSpectrum::drawLine(int posY)
+//{
+//	uint16_t zxPixelMapAddr, zxColorAttribAddr, tftMemAddr;
+//	uint8_t zxColorAttrib, zxPixelMap, zxBrightFlag, zxInkColor, zxPaperColor, bitPos;
+//	int i, posX, buffSwitch = (posY / DMA_BUFF_SIZE) & 1, buffOffset = (posY % DMA_BUFF_SIZE) * 320;
+//
+//	for (posX = 0; posX < 4; posX++) // Left border
+//	{
+//		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
+//		{
+//			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
+//		}
+//		for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i) ^ 1) + buffOffset] = m_borderColor;
+//	}
+//	for (posX = 0; posX < 32; posX++) // Main area
+//	{
+//		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 4 == m_borderColors[m_pbRIndex].x)
+//		{
+//			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
+//		}
+//		if (posY < 24 || posY > 215)
+//			for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i + 32) ^ 1) + buffOffset] = m_borderColor;
+//		else
+//		{
+//			zxColorAttribAddr = 0x5800 + (((posY - 24) / 8) * 32) + posX; 
+//			zxColorAttrib = m_pZXMemory[zxColorAttribAddr];
+//			zxBrightFlag = (zxColorAttrib & 0x40) >> 3;
+//			zxPixelMapAddr = 0x4000 + (((posY - 24) % 64) / 8) * 32 + ((posY - 24) % 8) * 256 + ((posY - 24) / 64) * 2048 + posX;
+//			zxPixelMap = m_pZXMemory[zxPixelMapAddr] ^ ((zxColorAttrib & 0x80) ? ((m_frameCounter & 0x10) ? 255 : 0) : 0);
+//			zxInkColor = zxColorAttrib & 0x07; zxPaperColor = (zxColorAttrib & 0x38) >> 3;
+//			for (i = 0; i < 8; i++)
+//			{
+//				tftMemAddr = posX * 8 + i + 32;	bitPos = (0x80 >> i);
+//				if (zxPixelMap & bitPos)
+//					m_pScreenBuffer[buffSwitch][tftMemAddr + buffOffset] = m_colorLookup[zxInkColor + zxBrightFlag];
+//				else
+//					m_pScreenBuffer[buffSwitch][tftMemAddr + buffOffset] = m_colorLookup[zxPaperColor + zxBrightFlag];
+//			}
+//		}
+//	}
+//	for (posX = 0; posX < 4; posX++) // Right border
+//	{
+//		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 36 == m_borderColors[m_pbRIndex].x)
+//		{
+//			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
+//		}
+//		for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i + 288) ^ 1) + buffOffset] = m_borderColor;
+//	}
+//	for (posX = 0; posX < 16; posX++) // Retrace
+//	{
+//		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 40 == m_borderColors[m_pbRIndex].x)
+//		{
+//			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
+//		}
+//	}
+//	if (posY % DMA_BUFF_SIZE == DMA_BUFF_SIZE - 1) m_pDisplayInstance->drawBuffer(buffSwitch, 320 * DMA_BUFF_SIZE);
+//}
 
 void ZXSpectrum::intZ80()
 {
@@ -450,7 +514,7 @@ void ZXSpectrum::stepZ80()
 			PUSH16(tempword & 0xFF, tempword >> 8);
 			break;
 		}
-		case AL_8:
+		case AL_R:
 		{
 			if (r_(opcode) == 0x06)
 			{
@@ -466,7 +530,7 @@ void ZXSpectrum::stepZ80()
 				}
 				else
 					bytetemp = readMem(HL);
-				switch (AL_OPERATION_DECODE(opcode))
+				switch (ALRS_OPERATION_DECODE(opcode))
 				{
 				case 0:
 				{
@@ -513,7 +577,7 @@ void ZXSpectrum::stepZ80()
 				}
 			}
 			else
-				switch (AL_OPERATION_DECODE(opcode))
+				switch (ALRS_OPERATION_DECODE(opcode))
 				{
 				case 0:
 				{
@@ -754,7 +818,7 @@ void ZXSpectrum::stepZ80()
 		case AL_N:
 		{
 			uint8_t bytetemp = readMem(PC++);
-			switch (AL_OPERATION_DECODE(opcode))
+			switch (ALRS_OPERATION_DECODE(opcode))
 			{
 				case 0:
 			{
@@ -916,7 +980,7 @@ void ZXSpectrum::stepZ80()
 			Q = FL;
 			break;
 		}
-		case RLC_R:							/*!!*/
+		case RS_R:							/*!!*/
 		{
 			uint8_t bytetemp;
 			if (pRegisters != m_Z80Processor.pRegisters)
@@ -925,14 +989,102 @@ void ZXSpectrum::stepZ80()
 				{
 					bytetemp = readMem(m_Z80Processor.memptr.w);
 					contendedAccess(m_Z80Processor.memptr.w, 1);
-					RLC(bytetemp);
+					switch (ALRS_OPERATION_DECODE(opcode))
+					{
+					case 0:
+					{
+						RLC(bytetemp);
+						break;
+					}
+					case 1:
+					{
+						RRC(bytetemp);
+						break;
+					}
+					case 2:
+					{
+						RL(bytetemp);
+						break;
+					}
+					case 3:
+					{
+						RR(bytetemp);
+						break;
+					}
+					case 4:
+					{
+						SLA(bytetemp);
+						break;
+					}
+					case 5:
+					{
+						SRA(bytetemp);
+						break;
+					}
+					case 6:
+					{
+						SLL(bytetemp);
+						break;
+					}
+					case 7:
+					{
+						SRL(bytetemp);
+						break;
+					}
+					default:
+						break;
+					}
 					writeMem(m_Z80Processor.memptr.w, bytetemp);
 				}
 				else
 				{
 					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
 					contendedAccess(m_Z80Processor.memptr.w, 1);
-					RLC((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+					switch (ALRS_OPERATION_DECODE(opcode))
+					{
+					case 0:
+					{
+						RLC((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+						break;
+					}
+					case 1:
+					{
+						RRC((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+						break;
+					}
+					case 2:
+					{
+						RL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+						break;
+					}
+					case 3:
+					{
+						RR((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+						break;
+					}
+					case 4:
+					{
+						SLA((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+						break;
+					}
+					case 5:
+					{
+						SRA((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+						break;
+					}
+					case 6:
+					{
+						SLL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+						break;
+					}
+					case 7:
+					{
+						SRL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
+						break;
+					}
+					default:
+						break;
+					}
 					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
 				}
 			}
@@ -942,249 +1094,99 @@ void ZXSpectrum::stepZ80()
 				{
 					bytetemp = readMem(HL);
 					contendedAccess(HL, 1);
-					RLC(bytetemp);
+					switch (ALRS_OPERATION_DECODE(opcode))
+					{
+					case 0:
+					{
+						RLC(bytetemp);
+						break;
+					}
+					case 1:
+					{
+						RRC(bytetemp);
+						break;
+					}
+					case 2:
+					{
+						RL(bytetemp);
+						break;
+					}
+					case 3:
+					{
+						RR(bytetemp);
+						break;
+					}
+					case 4:
+					{
+						SLA(bytetemp);
+						break;
+					}
+					case 5:
+					{
+						SRA(bytetemp);
+						break;
+					}
+					case 6:
+					{
+						SLL(bytetemp);
+						break;
+					}
+					case 7:
+					{
+						SRL(bytetemp);
+						break;
+					}
+					default:
+						break;
+					}
 					writeMem(HL, bytetemp);
 				}
 				else
-					RLC((*(uint8_t*)(pRegisters[r_(opcode)])));
-			}
-			break;
-		}
-		case RL_R:							/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					RL(bytetemp);
-					writeMem(m_Z80Processor.memptr.w, bytetemp);
-				}
-				else
-				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					RL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				}
-			}
-			else
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(HL);
-					contendedAccess(HL, 1);
-					RL(bytetemp);
-					writeMem(HL, bytetemp);
-				}
-				else
-					RL((*(uint8_t*)(pRegisters[r_(opcode)])));
-			}
-			break;
-		}
-		case RRC_R:							/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					RRC(bytetemp);
-					writeMem(m_Z80Processor.memptr.w, bytetemp);
-				}
-				else
-				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					RRC((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				}
-			}
-			else
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(HL);
-					contendedAccess(HL, 1);
-					RRC(bytetemp);
-					writeMem(HL, bytetemp);
-				}
-				else
-					RRC((*(uint8_t*)(pRegisters[r_(opcode)])));
-			}
-			break;
-		}
-		case RR_R:							/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					RR(bytetemp);
-					writeMem(m_Z80Processor.memptr.w, bytetemp);
-				}
-				else
-				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					RR((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				}
-			}
-			else
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(HL);
-					contendedAccess(HL, 1);
-					RR(bytetemp);
-					writeMem(HL, bytetemp);
-				}
-				else
-					RR((*(uint8_t*)(pRegisters[r_(opcode)])));
-			}
-			break;
-		}
-		case SLA_R:							/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					SLA(bytetemp);
-					writeMem(m_Z80Processor.memptr.w, bytetemp);
-				}
-				else
-				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					SLA((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				}
-			}
-			else
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(HL);
-					contendedAccess(HL, 1);
-					SLA(bytetemp);
-					writeMem(HL, bytetemp);
-				}
-				else
-					SLA((*(uint8_t*)(pRegisters[r_(opcode)])));
-			}
-			break;
-		}
-		case SLL_R:							/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					SLL(bytetemp);
-					writeMem(m_Z80Processor.memptr.w, bytetemp);
-				}
-				else
-				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					SLL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				}
-			}
-			else
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(HL);
-					contendedAccess(HL, 1);
-					SLL(bytetemp);
-					writeMem(HL, bytetemp);
-				}
-				else
-					SLL((*(uint8_t*)(pRegisters[r_(opcode)])));
-			}
-			break;
-		}
-		case SRA_R:							/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					SRA(bytetemp);
-					writeMem(m_Z80Processor.memptr.w, bytetemp);
-				}
-				else
-				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					SRA((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				}
-			}
-			else
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(HL);
-					contendedAccess(HL, 1);
-					SRA(bytetemp);
-					writeMem(HL, bytetemp);
-				}
-				else
-					SRA((*(uint8_t*)(pRegisters[r_(opcode)])));
-			}
-			break;
-		}
-		case SRL_R:							/*!!*/
-		{
-			uint8_t bytetemp;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					SRL(bytetemp);
-					writeMem(m_Z80Processor.memptr.w, bytetemp);
-				}
-				else
-				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					SRL((*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				}
-			}
-			else
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(HL);
-					contendedAccess(HL, 1);
-					SRL(bytetemp);
-					writeMem(HL, bytetemp);
-				}
-				else
-					SRL((*(uint8_t*)(pRegisters[r_(opcode)])));
+					switch (ALRS_OPERATION_DECODE(opcode))
+					{
+					case 0:
+					{
+						RLC((*(uint8_t*)(pRegisters[r_(opcode)])));
+						break;
+					}
+					case 1:
+					{
+						RRC((*(uint8_t*)(pRegisters[r_(opcode)])));
+						break;
+					}
+					case 2:
+					{
+						RL((*(uint8_t*)(pRegisters[r_(opcode)])));
+						break;
+					}
+					case 3:
+					{
+						RR((*(uint8_t*)(pRegisters[r_(opcode)])));
+						break;
+					}
+					case 4:
+					{
+						SLA((*(uint8_t*)(pRegisters[r_(opcode)])));
+						break;
+					}
+					case 5:
+					{
+						SRA((*(uint8_t*)(pRegisters[r_(opcode)])));
+						break;
+					}
+					case 6:
+					{
+						SLL((*(uint8_t*)(pRegisters[r_(opcode)])));
+						break;
+					}
+					case 7:
+					{
+						SRL((*(uint8_t*)(pRegisters[r_(opcode)])));
+						break;
+					}
+					default:
+						break;
+					}
 			}
 			break;
 		}
@@ -1229,20 +1231,23 @@ void ZXSpectrum::stepZ80()
 			}
 			break;
 		}
-		case SET_B_R:						/*!!*/
+		case SR_B_R:						/*!!*/
 		{
 			uint8_t bitMask = 1 << r(opcode), bytetemp;
 			if (pRegisters != m_Z80Processor.pRegisters)
 			{
 				if (r_(opcode) == 0x06)
 				{
-					bytetemp = readMem(m_Z80Processor.memptr.w) | bitMask;
+					bytetemp = readMem(m_Z80Processor.memptr.w);
+					bytetemp = (opcode & 0x40 ? bytetemp | bitMask : bytetemp & (~bitMask));
 					contendedAccess(m_Z80Processor.memptr.w, 1);
 					writeMem(m_Z80Processor.memptr.w, bytetemp);
 				}
 				else
 				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w) | bitMask;
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w);
+					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = (opcode & 0x40 ? (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) | bitMask : 
+																		   (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) & (~bitMask));
 					contendedAccess(m_Z80Processor.memptr.w, 1);
 					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
 				}
@@ -1251,44 +1256,13 @@ void ZXSpectrum::stepZ80()
 			{
 				if (r_(opcode) == 0x06)
 				{
-					bytetemp = readMem(HL) | bitMask;
+					bytetemp = readMem(HL);
+					bytetemp = (opcode & 0x40 ? bytetemp | bitMask : bytetemp & (~bitMask));
 					contendedAccess(HL, 1);
 					writeMem(HL, bytetemp);
 				}
 				else
-					(*(uint8_t*)(pRegisters[r_(opcode)])) |= bitMask;
-			}
-			break;
-		}
-		case RES_B_R:						/*!!*/
-		{
-			uint8_t bitMask = 1 << r(opcode), bytetemp;
-			bitMask ^= 0xFF;
-			if (pRegisters != m_Z80Processor.pRegisters)
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(m_Z80Processor.memptr.w) & bitMask;
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					writeMem(m_Z80Processor.memptr.w, bytetemp);
-				}
-				else
-				{
-					(*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])) = readMem(m_Z80Processor.memptr.w) & bitMask;
-					contendedAccess(m_Z80Processor.memptr.w, 1);
-					writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
-				}
-			}
-			else
-			{
-				if (r_(opcode) == 0x06)
-				{
-					bytetemp = readMem(HL) & bitMask;
-					contendedAccess(HL, 1);
-					writeMem(HL, bytetemp);
-				}
-				else
-					(*(uint8_t*)(pRegisters[r_(opcode)])) &= bitMask;
+					(*(uint8_t*)(pRegisters[r_(opcode)])) = (opcode & 0x40 ? (*(uint8_t*)(pRegisters[r_(opcode)])) | bitMask : (*(uint8_t*)(pRegisters[r_(opcode)])) & (~bitMask));;
 			}
 			break;
 		}
@@ -1571,7 +1545,7 @@ bool ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 {
 	char romFile[] = "/BASIC82.rom";
 	m_pDisplayInstance = pDisplayInstance;
-	for (uint8_t i = 0; i < 2; i++) m_pScreenBuffer[i] = m_pDisplayInstance->getBuffer(i);
+	for (uint8_t i = 0; i < 2; i++) m_pScreenBuffer[i] = (uint32_t*)m_pDisplayInstance->getBuffer(i);
 	m_pInPort = pKeyboardInstance->getBuffer();
 	if ((m_pZXMemory = (uint8_t*)malloc(65536)) == NULL) { printf("Error allocating ZXMemory"); return false; }
 	if (!loadROMFile(romFile)) return false;
@@ -1594,7 +1568,7 @@ void ZXSpectrum::resetZ80()
 {
 	stopTape();
 	m_Z80Processor = { 0 };
-	m_maxEmulTime = 0;
+	m_maxEmulTime = m_overStates = 0;
 	m_Z80Processor.pRegisters[0] = m_Z80Processor.pDDRegisters[0] = m_Z80Processor.pFDRegisters[0] = &B;
 	m_Z80Processor.pRegisters[1] = m_Z80Processor.pDDRegisters[1] = m_Z80Processor.pFDRegisters[1] = &C;
 	m_Z80Processor.pRegisters[2] = m_Z80Processor.pDDRegisters[2] = m_Z80Processor.pFDRegisters[2] = &D;
@@ -1633,6 +1607,7 @@ void ZXSpectrum::loopZ80()
 		if (m_scanLine != scanLine)
 		{
 			m_scanLine = scanLine;
+			if (m_Z80Processor.tCount % 224 > m_overStates) m_overStates = m_Z80Processor.tCount % 224;
 			if (m_scanLine >= SCREENOFFSET && m_scanLine <= SCREENOFFSET + 239) drawLine(m_scanLine - SCREENOFFSET);
 		}
 	}
@@ -1642,7 +1617,6 @@ void ZXSpectrum::loopZ80()
 	}
 	m_Z80Processor.tCount -= LOOPCYCLES;
 	m_frameCounter = (++m_frameCounter) & 0x1F;
-	//if (m_Z80Processor.intEnabledAt >= 0) m_Z80Processor.intEnabledAt -= LOOPCYCLES;
 	m_emulationTime = micros() - startTime;
 	if (m_maxEmulTime < m_emulationTime) m_maxEmulTime = m_emulationTime;
 	while (!(rp2040.fifo.pop() & STOP_FRAME));

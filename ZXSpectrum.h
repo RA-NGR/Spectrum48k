@@ -6,7 +6,7 @@
 
 enum {
 	ADD_HL_RR,
-	AL_8,
+	AL_R,
 	DEC_8,
 	DEC_RR,
 	EX_INDIRECT_SP_HL,
@@ -54,18 +54,10 @@ enum {
 	RLA,
 	RRCA,
 	RRA,
-	RLC_R,
-	RL_R,
-	RRC_R,
-	RR_R,
-	SLA_R,
-	SLL_R,
-	SRA_R,
-	SRL_R,
+	RS_R,
 	RLD_RRD,
 	BIT_B_R,
-	SET_B_R,
-	RES_B_R,
+	SR_B_R,
 	JP_NN,
 	JR_E,
 	DJNZ_E,
@@ -104,17 +96,17 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) instructionTa
 	LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8,																		/* 0x68 - 0x6F */
 	LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, LD_INDIRECT_HL_R, HALT,LD_INDIRECT_HL_R,  /* 0x70 - 0x77 */
 	LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8, LD_R_8,																		/* 0x78 - 0x7F */
-	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0x80 - 0x87 */
-	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0x88 - 0x8F */
-	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0x90 - 0x97 */
-	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0x98 - 0x9F */
-	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0xA0 - 0xA7 */
-	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																				/* 0xA8 - 0xAF */
-	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																						/* 0xB0 - 0xB7 */
-	AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8, AL_8,																						/* 0xB8 - 0xBF */
+	AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R,																						/* 0x80 - 0x87 */
+	AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R,																						/* 0x88 - 0x8F */
+	AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R,																						/* 0x90 - 0x97 */
+	AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R,																						/* 0x98 - 0x9F */
+	AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R,																						/* 0xA0 - 0xA7 */
+	AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R,																						/* 0xA8 - 0xAF */
+	AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R,																						/* 0xB0 - 0xB7 */
+	AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R, AL_R,																						/* 0xB8 - 0xBF */
 	RET, POP_SS, JP_NN, JP_NN, CALL_NN, PUSH_SS, AL_N, RST_P,																			/* 0xC0 - 0xC7 */
 	RET, RET, JP_NN, CB_PREFIX, CALL_NN, CALL_NN, AL_N, RST_P,																			/* 0xC8 - 0xCF */
-	RET, POP_SS, JP_NN, OUT_N_A, CALL_NN, PUSH_SS, AL_N, RST_P,																		/* 0xD0 - 0xD7 */
+	RET, POP_SS, JP_NN, OUT_N_A, CALL_NN, PUSH_SS, AL_N, RST_P,																			/* 0xD0 - 0xD7 */
 	RET, EXX, JP_NN, IN_A_N, CALL_NN, DD_PREFIX, AL_N, RST_P,																			/* 0xD8 - 0xDF */
 	RET, POP_SS, JP_NN, EX_INDIRECT_SP_HL, CALL_NN, PUSH_SS, AL_N, RST_P,																/* 0xE0 - 0xE7 */
 	RET, JP_HL, JP_NN, EX_DE_HL, CALL_NN, ED_PREFIX, AL_N, RST_P,																		/* 0xE8 - 0xEF */
@@ -122,14 +114,14 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) instructionTa
 	RET, LD_SP_HL, JP_NN, EI, CALL_NN, FD_PREFIX, AL_N, RST_P																			/* 0xF8 - 0xFF */
 };
 const uint8_t __attribute__((section(".time_critical." "tables"))) cbInstructionTable[256] = {
-	RLC_R, RLC_R, RLC_R, RLC_R, RLC_R, RLC_R, RLC_R, RLC_R,					/* 0x00 - 0x07 */
-	RRC_R, RRC_R, RRC_R, RRC_R, RRC_R, RRC_R, RRC_R, RRC_R,					/* 0x08 - 0x0F */
-	RL_R, RL_R, RL_R, RL_R, RL_R, RL_R, RL_R, RL_R,							/* 0x10 - 0x17 */
-	RR_R, RR_R, RR_R, RR_R, RR_R, RR_R, RR_R, RR_R,							/* 0x18 - 0x1F */
-	SLA_R, SLA_R, SLA_R, SLA_R, SLA_R, SLA_R, SLA_R, SLA_R,					/* 0x20 - 0x27 */
-	SRA_R, SRA_R, SRA_R, SRA_R, SRA_R, SRA_R, SRA_R, SRA_R,					/* 0x28 - 0x2F */
-	SLL_R, SLL_R, SLL_R, SLL_R, SLL_R, SLL_R, SLL_R, SLL_R,					/* 0x30 - 0x37 */
-	SRL_R, SRL_R, SRL_R, SRL_R, SRL_R, SRL_R, SRL_R, SRL_R,					/* 0x38 - 0x3F */
+	RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R,							/* 0x00 - 0x07 */
+	RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R,							/* 0x08 - 0x0F */
+	RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R,							/* 0x10 - 0x17 */
+	RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R,							/* 0x18 - 0x1F */
+	RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R,							/* 0x20 - 0x27 */
+	RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R,							/* 0x28 - 0x2F */
+	RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R,							/* 0x30 - 0x37 */
+	RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R, RS_R,							/* 0x38 - 0x3F */
 	BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R,	/* 0x40 - 0x47 */
 	BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R,	/* 0x48 - 0x4F */
 	BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R,	/* 0x50 - 0x57 */
@@ -138,22 +130,22 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) cbInstruction
 	BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R,	/* 0x68 - 0x6F */
 	BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R,	/* 0x70 - 0x77 */
 	BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R, BIT_B_R,	/* 0x78 - 0x7F */
-	RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R,	/* 0x80 - 0x87 */
-	RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R,	/* 0x88 - 0x8F */
-	RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R,	/* 0x90 - 0x97 */
-	RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R,	/* 0x98 - 0x9F */
-	RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R,	/* 0xA0 - 0xA7 */
-	RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R,	/* 0xA8 - 0xAF */
-	RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R,	/* 0xB0 - 0xB7 */
-	RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R, RES_B_R,	/* 0xB8 - 0xBF */
-	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R,	/* 0xC0 - 0xC7 */
-	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R,	/* 0xC8 - 0xCF */
-	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R,	/* 0xD0 - 0xD7 */
-	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R,	/* 0xD8 - 0xDF */
-	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R,	/* 0xE0 - 0xE7 */
-	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R,	/* 0xE8 - 0xEF */
-	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R,	/* 0xF0 - 0xF7 */
-	SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R, SET_B_R,	/* 0xF8 - 0xFF */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0x80 - 0x87 */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0x88 - 0x8F */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0x90 - 0x97 */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0x98 - 0x9F */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xA0 - 0xA7 */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xA8 - 0xAF */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xB0 - 0xB7 */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xB8 - 0xBF */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xC0 - 0xC7 */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xC8 - 0xCF */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xD0 - 0xD7 */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xD8 - 0xDF */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xE0 - 0xE7 */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xE8 - 0xEF */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xF0 - 0xF7 */
+	SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R, SR_B_R,			/* 0xF8 - 0xFF */
 };
 const uint8_t __attribute__((section(".time_critical." "tables"))) edInstructionTable[256] = {
 	ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, /* 0x00 - 0x07 */
@@ -262,40 +254,6 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) parityTable[2
 	0x04, 0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00,
 	0x00, 0x04, 0x04, 0x00, 0x04, 0x00, 0x00, 0x04
 };
-//const uint8_t __attribute__((section(".time_critical." "tables"))) sz53pTable[256] = {
-//	0x44, 0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00,
-//	0x08, 0x0C, 0x0C, 0x08, 0x0C, 0x08, 0x08, 0x0C,
-//	0x00, 0x04, 0x04, 0x00, 0x04, 0x00, 0x00, 0x04,
-//	0x0C, 0x08, 0x08, 0x0C, 0x08, 0x0C, 0x0C, 0x08,
-//	0x20, 0x24, 0x24, 0x20, 0x24, 0x20, 0x20, 0x24,
-//	0x2C, 0x28, 0x28, 0x2C, 0x28, 0x2C, 0x2C, 0x28,
-//	0x24, 0x20, 0x20, 0x24, 0x20, 0x24, 0x24, 0x20,
-//	0x28, 0x2C, 0x2C, 0x28, 0x2C, 0x28, 0x28, 0x2C,
-//	0x00, 0x04, 0x04, 0x00, 0x04, 0x00, 0x00, 0x04,
-//	0x0C, 0x08, 0x08, 0x0C, 0x08, 0x0C, 0x0C, 0x08,
-//	0x04, 0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00,
-//	0x08, 0x0C, 0x0C, 0x08, 0x0C, 0x08, 0x08, 0x0C,
-//	0x24, 0x20, 0x20, 0x24, 0x20, 0x24, 0x24, 0x20,
-//	0x28, 0x2C, 0x2C, 0x28, 0x2C, 0x28, 0x28, 0x2C,
-//	0x20, 0x24, 0x24, 0x20, 0x24, 0x20, 0x20, 0x24,
-//	0x2C, 0x28, 0x28, 0x2C, 0x28, 0x2C, 0x2C, 0x28,
-//	0x80, 0x84, 0x84, 0x80, 0x84, 0x80, 0x80, 0x84,
-//	0x8C, 0x88, 0x88, 0x8C, 0x88, 0x8C, 0x8C, 0x88,
-//	0x84, 0x80, 0x80, 0x84, 0x80, 0x84, 0x84, 0x80,
-//	0x88, 0x8C, 0x8C, 0x88, 0x8C, 0x88, 0x88, 0x8C,
-//	0xA4, 0xA0, 0xA0, 0xA4, 0xA0, 0xA4, 0xA4, 0xA0,
-//	0xA8, 0xAC, 0xAC, 0xA8, 0xAC, 0xA8, 0xA8, 0xAC,
-//	0xA0, 0xA4, 0xA4, 0xA0, 0xA4, 0xA0, 0xA0, 0xA4,
-//	0xAC, 0xA8, 0xA8, 0xAC, 0xA8, 0xAC, 0xAC, 0xA8,
-//	0x84, 0x80, 0x80, 0x84, 0x80, 0x84, 0x84, 0x80,
-//	0x88, 0x8C, 0x8C, 0x88, 0x8C, 0x88, 0x88, 0x8C,
-//	0x80, 0x84, 0x84, 0x80, 0x84, 0x80, 0x80, 0x84,
-//	0x8C, 0x88, 0x88, 0x8C, 0x88, 0x8C, 0x8C, 0x88,
-//	0xA0, 0xA4, 0xA4, 0xA0, 0xA4, 0xA0, 0xA0, 0xA4,
-//	0xAC, 0xA8, 0xA8, 0xAC, 0xA8, 0xAC, 0xAC, 0xA8,
-//	0xA4, 0xA0, 0xA0, 0xA4, 0xA0, 0xA4, 0xA4, 0xA0,
-//	0xA8, 0xAC, 0xAC, 0xA8, 0xAC, 0xA8, 0xA8, 0xAC
-//};
 const uint8_t __attribute__((section(".time_critical." "tables"))) sz53pTable[256] = {
 	0x44, 0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00,
 	0x08, 0x0C, 0x0C, 0x08, 0x0C, 0x08, 0x08, 0x0C,
@@ -348,6 +306,11 @@ class ZXSpectrum
 {
 	const uint16_t m_colorLookup[16] = { 0x0000, 0x1700, 0x00B8, 0x17B8, 0xE005, 0xF705, 0xE0BD, 0xF7BD,
 										 0x0000, 0x1F00, 0x00F8, 0x1FF8, 0xE007, 0xFF07, 0xE0FF, 0xFFFF };
+	const uint32_t m_colorsTable[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
+										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
+	const uint32_t m_colorInvertMask[2] = { 0x00, 0xFF };
+	const uint32_t m_pixelBitMask[4] = { 0x00000000, 0xFFFF0000, 0x0000FFFF, 0xFFFFFFFF };
+
 	typedef union
 	{
 		struct { uint8_t l, h; } b; // Little Endian
@@ -365,7 +328,7 @@ class ZXSpectrum
 		uint8_t iff1, iff2, im;
 		uint8_t q;
 		uint32_t halted;
-		uint32_t skipINT; // Processor is just after EI or within large DDDDxx, FDFDxx, DDFDxx or FDDDxx block 
+		uint32_t skipINT; // Processor is just after EI or within DD/FD prefixed opcode 
 		int tCount;
 		void* pRegisters[8];
 		void* pPairs[5];
@@ -410,10 +373,10 @@ class ZXSpectrum
 	uint16_t m_borderColor = m_colorLookup[7];
 	uint8_t m_frameCounter = 0;
 	uint8_t* m_pZXMemory;
-	uint16_t* m_pScreenBuffer[2];
+	uint32_t* m_pScreenBuffer[2];
 	bool m_initComplete = false;
 	int16_t m_scanLine = -1;
-	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;
+	uint32_t m_emulationTime = 0, m_maxEmulTime = 0, m_overStates = 0;
 	union PortFE
 	{
 		struct
@@ -456,6 +419,7 @@ public:
 	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
+	uint32_t getOverstates() { return m_overStates;	};
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
 	void startTape(uint8_t* pBuffer, uint32_t bufferSize);
 	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };

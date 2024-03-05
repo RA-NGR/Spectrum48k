@@ -181,7 +181,6 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) edInstruction
 	ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, /* 0xF0 - 0xF7 */
 	ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED, ED_UNDEFINED  /* 0xF8 - 0xFF */
 };
-
 const uint8_t __attribute__((section(".time_critical." "tables"))) halfcarryAddTable[8] = { 0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x10 };
 const uint8_t __attribute__((section(".time_critical." "tables"))) halfcarrySubTable[8] = { 0x00, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x10 };
 const uint8_t __attribute__((section(".time_critical." "tables"))) overflowAddTable[8] = { 0x00, 0x00, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00 };
@@ -291,7 +290,6 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) sz53pTable[25
 const uint8_t __attribute__((section(".time_critical." "tables"))) xorConditionTable[8] = { FLAG_Z, 0, FLAG_C, 0, FLAG_P, 0, FLAG_S, 0 };
 const uint8_t __attribute__((section(".time_critical." "tables"))) andConditionTable[8] = { FLAG_Z, FLAG_Z, FLAG_C, FLAG_C, FLAG_P, FLAG_P, FLAG_S, FLAG_S };
 const uint8_t __attribute__((section(".time_critical." "tables"))) rstTable[8] = { 0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38 };
-
 const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[224] = { 
 	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
 	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
@@ -304,9 +302,9 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[2
 
 class ZXSpectrum
 {
-	const uint16_t m_colorLookup[16] = { 0x0000, 0x1700, 0x00B8, 0x17B8, 0xE005, 0xF705, 0xE0BD, 0xF7BD,
-										 0x0000, 0x1F00, 0x00F8, 0x1FF8, 0xE007, 0xFF07, 0xE0FF, 0xFFFF };
-	const uint32_t m_colorsTable[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
+	//const uint16_t m_colorLookup16[16] = { 0x0000, 0x1700, 0x00B8, 0x17B8, 0xE005, 0xF705, 0xE0BD, 0xF7BD,
+	//									   0x0000, 0x1F00, 0x00F8, 0x1FF8, 0xE007, 0xFF07, 0xE0FF, 0xFFFF };
+	const uint32_t m_colorLookup[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
 										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
 	const uint32_t m_colorInvertMask[2] = { 0x00, 0xFF };
 	const uint32_t m_pixelBitMask[4] = { 0x00000000, 0xFFFF0000, 0x0000FFFF, 0xFFFFFFFF };
@@ -361,22 +359,23 @@ class ZXSpectrum
 		uint8_t* data;
 		uint32_t bit;
 	} m_TAPSection;
+	uint8_t m_tapeBit = 0;
 	struct BorderColors
 	{
 		uint16_t x;
 		uint8_t y;
-		uint16_t color;
-	} m_borderColors[BORDER_BUFFER_SIZE];
-	uint8_t m_defaultPortFal = 0xFF;
-	uint8_t m_pbWIndex = 0;
-	uint8_t m_pbRIndex = 0;
-	uint16_t m_borderColor = m_colorLookup[7];
+		uint32_t color;
+	} m_borderColors[BORDER_BUFFER_SIZE]; // ring buffer of border colors in visible area (1 color per 8 pixels)
+	uint8_t m_pbWIndex = 0; // wr index of ring buffer
+	uint8_t m_pbRIndex = 0; // rd index of ring buffer
+	uint32_t m_borderColor = m_colorLookup[7]; // border color out of visible area
 	uint8_t m_frameCounter = 0;
 	uint8_t* m_pZXMemory;
 	uint32_t* m_pScreenBuffer[2];
 	bool m_initComplete = false;
+	bool m_debugActvie = false;
 	int16_t m_scanLine = -1;
-	uint32_t m_emulationTime = 0, m_maxEmulTime = 0, m_overStates = 0;
+	uint32_t m_emulationTime = 0, m_maxEmulTime = 0/*, m_overStates = 0*/;
 	union PortFE
 	{
 		struct
@@ -388,8 +387,8 @@ class ZXSpectrum
 		};
 		uint8_t rawData;
 	} m_outPortFE;
-	uint8_t m_tapeBit = 0;
-	uint8_t* m_pInPort;
+	uint8_t m_defaultPortFal = 0xFF;
+	uint8_t* m_pInPorts;
 	Display* m_pDisplayInstance;
 	union ZXSettings
 	{
@@ -401,7 +400,7 @@ class ZXSpectrum
 		uint8_t rawData;
 	} m_emulSettings = { 0x01 };
 	bool m_soundEnabled = true;
-	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
+	void /*__attribute__((section(".time_critical." "drawLine")))*/ drawLine(int posY);
 	void __attribute__((section(".time_critical." "intZ80"))) intZ80();
 	void processTape();
 	void __attribute__((section(".time_critical." "writeMem"))) writeMem(uint16_t address, uint8_t data);
@@ -419,7 +418,7 @@ public:
 	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
-	uint32_t getOverstates() { return m_overStates;	};
+	//uint32_t getOverstates() { return m_overStates;	};
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
 	void startTape(uint8_t* pBuffer, uint32_t bufferSize);
 	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
@@ -427,4 +426,5 @@ public:
 	void tapeMode(bool isTurbo = false);
 	void storeState(const char* pFileName);
 	void restoreState(const char* pFileName);
+	bool toggleDebug() { m_debugActvie = !m_debugActvie; return m_debugActvie; }
 };

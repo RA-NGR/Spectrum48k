@@ -14,31 +14,21 @@ void ZXSpectrum::drawLine(int posY)
 	int flashAttr = (m_frameCounter >> 4) & 1;
 	for (posX = 0; posX < 4; posX++) // Left border
 	{
-		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
-		{
-			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
-		}
-		uint32_t borderColor = m_borderColor << 16 | m_borderColor;
-		*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
-		*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
+		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x) { m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1); }
+		*pScreenBuffer++ = m_borderColor; *pScreenBuffer++ = m_borderColor;	*pScreenBuffer++ = m_borderColor; *pScreenBuffer++ = m_borderColor;
 	}
 	for (; posX < 32 + 4; posX++) // Main area
 	{
-		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
-		{
-			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
-		}
+		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x) {	m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1); }
 		if (posY < 24 || posY > 215)
 		{
-			uint32_t borderColor = m_borderColor << 16 | m_borderColor;
-			*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
-			*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
+			*pScreenBuffer++ = m_borderColor; *pScreenBuffer++ = m_borderColor;	*pScreenBuffer++ = m_borderColor; *pScreenBuffer++ = m_borderColor;
 		}
 		else
 		{
 			uint8_t attrData = *pAttrData++, pixelData = *pPixelData++ ^ m_colorInvertMask[(attrData >> 7) & flashAttr], 
 					bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
-			uint32_t bgColorMask, bgColor = m_colorsTable[bgColorIndex], fgColorMask, fgColor = m_colorsTable[fgColorIndex];
+			uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex];
 			fgColorMask = m_pixelBitMask[(pixelData >> 6) & 3];	bgColorMask = ~fgColorMask;
 			*pScreenBuffer++ = (fgColorMask & fgColor) | (bgColorMask & bgColor);
 			fgColorMask = m_pixelBitMask[(pixelData >> 4) & 3];	bgColorMask = ~fgColorMask;
@@ -51,21 +41,11 @@ void ZXSpectrum::drawLine(int posY)
 	}
 	for (; posX < 36 + 4; posX++) // Right border
 	{
-		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
-		{
-			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
-		}
-		uint32_t borderColor = m_borderColor << 16 | m_borderColor;
-		*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
-		*pScreenBuffer++ = borderColor;	*pScreenBuffer++ = borderColor;
+		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x) {	m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1); }
+		*pScreenBuffer++ = m_borderColor; *pScreenBuffer++ = m_borderColor;	*pScreenBuffer++ = m_borderColor; *pScreenBuffer++ = m_borderColor;
 	}
 	for (; posX < 40 + 16; posX++) // Retrace
-	{
-		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
-		{
-			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
-		}
-	}
+		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x) {	m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1); }
 	if (posY % DMA_BUFF_SIZE == DMA_BUFF_SIZE - 1) m_pDisplayInstance->drawBuffer(buffSwitch, 320 * DMA_BUFF_SIZE);
 }
 
@@ -229,7 +209,7 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 	if (!(port & 0x0001))
 	{
 		contendedAccess(CONTENDED, 2);
-		for (int i = 0; i < 8; i++) if (!((port >> (i + 8)) & 0x01)) retVal &= m_pInPort[i];
+		for (int i = 0; i < 8; i++) if (!((port >> (i + 8)) & 0x01)) retVal &= m_pInPorts[i];
 		if (m_tapeBit) retVal ^= 0x40;
 	}
 	else
@@ -245,7 +225,7 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 		}
 
 	}
-	if ((port & 0x00FF) <= 0x1F) retVal = m_pInPort[8];
+	if ((port & 0x00FF) <= 0x1F) retVal = m_pInPorts[8];
 	m_Z80Processor.tCount++;
 	return retVal;
 }
@@ -257,13 +237,14 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 	{
 		if (m_outPortFE.borderColor != (data & 7))
 		{
-			if (m_Z80Processor.tCount >= STARTSCREEN && m_Z80Processor.tCount <= ENDSCREEN)
+			if (m_Z80Processor.tCount >= STARTSCREEN && m_Z80Processor.tCount < ENDSCREEN)
 			{
 				m_borderColors[m_pbWIndex].y = (m_Z80Processor.tCount - STARTSCREEN) / 224; m_borderColors[m_pbWIndex].x = ((m_Z80Processor.tCount - STARTSCREEN) % 224) / 4;
 				m_borderColors[m_pbWIndex].color = m_colorLookup[data & 0x07]; m_pbWIndex = (++m_pbWIndex) & (BORDER_BUFFER_SIZE - 1);
 			}
 			else
 				m_borderColor = m_colorLookup[data & 0x07];
+
 		}
 		if (m_emulSettings.soundEnabled && m_outPortFE.soundOut != ((data >> 4) & 1)) rp2040.fifo.push_nb(m_Z80Processor.tCount & 0x00FFFFFF | WR_PORT | (data & 0x10) << 20);
 		m_outPortFE.rawData = data;
@@ -1546,7 +1527,7 @@ bool ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 	char romFile[] = "/BASIC82.rom";
 	m_pDisplayInstance = pDisplayInstance;
 	for (uint8_t i = 0; i < 2; i++) m_pScreenBuffer[i] = (uint32_t*)m_pDisplayInstance->getBuffer(i);
-	m_pInPort = pKeyboardInstance->getBuffer();
+	m_pInPorts = pKeyboardInstance->getBuffer();
 	if ((m_pZXMemory = (uint8_t*)malloc(65536)) == NULL) { printf("Error allocating ZXMemory"); return false; }
 	if (!loadROMFile(romFile)) return false;
 	m_initComplete = true;
@@ -1568,7 +1549,7 @@ void ZXSpectrum::resetZ80()
 {
 	stopTape();
 	m_Z80Processor = { 0 };
-	m_maxEmulTime = m_overStates = 0;
+	m_maxEmulTime = /*m_overStates = */0;
 	m_Z80Processor.pRegisters[0] = m_Z80Processor.pDDRegisters[0] = m_Z80Processor.pFDRegisters[0] = &B;
 	m_Z80Processor.pRegisters[1] = m_Z80Processor.pDDRegisters[1] = m_Z80Processor.pFDRegisters[1] = &C;
 	m_Z80Processor.pRegisters[2] = m_Z80Processor.pDDRegisters[2] = m_Z80Processor.pFDRegisters[2] = &D;
@@ -1607,12 +1588,13 @@ void ZXSpectrum::loopZ80()
 		if (m_scanLine != scanLine)
 		{
 			m_scanLine = scanLine;
-			if (m_Z80Processor.tCount % 224 > m_overStates) m_overStates = m_Z80Processor.tCount % 224;
+			//if (m_Z80Processor.tCount % 224 > m_overStates) m_overStates = m_Z80Processor.tCount % 224;
 			if (m_scanLine >= SCREENOFFSET && m_scanLine <= SCREENOFFSET + 239) drawLine(m_scanLine - SCREENOFFSET);
 		}
 	}
 	while (m_pbRIndex != m_pbWIndex)
 	{
+		DBG_PRINTF("Overborder, X=%d, Y=%d\n", m_borderColors[m_pbRIndex].x, m_borderColors[m_pbRIndex].y);
 		m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
 	}
 	m_Z80Processor.tCount -= LOOPCYCLES;

@@ -54,7 +54,7 @@
 #define STARTSCREEN (8960 - 16)
 #define ENDSCREEN (62720 - 16)
 #define IRQ_LENGTH 32
-#define BORDER_BUFFER_SIZE 128
+#define BORDER_BUFFER_SIZE 64
 //#define SOUND_CLOCK 12 /* in us, 12 is enought in most cases */
 #define KBD_CLOCK 1000
 #define SOUND_BUFFER_SIZE 1024

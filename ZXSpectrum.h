@@ -3,7 +3,7 @@
 #include "Common.h"
 #include "ZXMacros.h"
 #include "ZXPeripherals.h"
-//#include "ROM82.h"
+#include "ROM82.h"
 
 enum {
 	ADD_HL_RR,
@@ -357,6 +357,7 @@ class ZXSpectrum
 		uint16_t size;
 		uint8_t* data;
 		uint32_t bit;
+		bool lastBit;
 	} m_TAPSection;
 	uint8_t m_tapeBit = 0;
 	struct BorderColors
@@ -369,8 +370,8 @@ class ZXSpectrum
 	uint8_t m_pbRIndex = 0; // rd index of ring buffer
 	uint32_t m_borderColor = m_colorLookup[7]; // border color out of visible area
 	uint8_t m_frameCounter = 0;
-	uint8_t* m_pZXMemory;
-	//uint8_t* m_pZXROM;
+	uint8_t m_zxRAM[6][1 << 14];
+	uint8_t* m_pMemPages[4];
 	uint32_t* m_pScreenBuffer[2];
 	bool m_initComplete = false;
 	bool m_debugActvie = false;
@@ -395,14 +396,25 @@ class ZXSpectrum
 		struct
 		{
 			uint8_t soundEnabled : 1;
-			uint8_t unused : 7;
+			uint8_t machineType : 1; // 0 - Spectrum 48
+			uint8_t unused : 6;
 		};
 		uint8_t rawData;
 	} m_emulSettings = { 0x01 };
+
+	void setMemPageAddr(uint32_t page, uint8_t* ptr) { m_pMemPages[page] = ptr - (page << 14); };
+	inline uint8_t* memoryAddress(uint32_t address) { return address + m_pMemPages[address >> 14]; };
+
 	bool m_soundEnabled = true;
 	void /*__attribute__((section(".time_critical." "drawLine")))*/ drawLine(int posY);
 	void __attribute__((section(".time_critical." "intZ80"))) intZ80();
+
+	File m_activeFile;
+	uint32_t m_currSectionSize;
+	uint8_t m_pDataBuffer[1024];
 	void processTape();
+	bool fetchTapeData();
+
 	void __attribute__((section(".time_critical." "writeMem"))) writeMem(uint16_t address, uint8_t data);
 	uint8_t __attribute__((section(".time_critical." "readMem"))) readMem(uint16_t address);
 	uint8_t __attribute__((section(".time_critical." "unattachedPort"))) unattachedPort();
@@ -411,15 +423,15 @@ class ZXSpectrum
 	void __attribute__((section(".time_critical." "stepZ80"))) stepZ80();
 public:
 	ZXSpectrum() {};
-	~ZXSpectrum();
+	~ZXSpectrum() {};
 	bool init(Display* pDisplayInstance, Keyboard* pKeyboardInstance);
-	bool loadROMFile(const char* pFileName);
 	void resetZ80();
 	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
 	void startTape(uint8_t* pBuffer, uint32_t bufferSize);
+	void startTape(File& file, uint32_t sectionSize);
 	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
 	void tapeMode(bool isTurbo = false);

@@ -1,16 +1,11 @@
 #include "ZXSpectrum.h"
 
-ZXSpectrum::~ZXSpectrum()
-{
-	free(m_pZXMemory);
-}
-
 void ZXSpectrum::drawLine(int posY)
 {
 	int posX, buffSwitch = (posY / DMA_BUFF_SIZE) & 1;
 	uint32_t* pScreenBuffer = m_pScreenBuffer[buffSwitch] + ((posY % DMA_BUFF_SIZE) * 160);
-	uint8_t* pPixelData = m_pZXMemory + 0x4000 + (((posY - 24) & 0x7) << 8) + (((posY - 24) & 0x38) << 2) + (((posY - 24) & 0xC0) << 5);
-	uint8_t* pAttrData = m_pZXMemory + 0x5800 + (((posY - 24) >> 3) << 5);
+	uint8_t* pPixelData = memoryAddress(0x4000 + (((posY - 24) & 0x7) << 8) + (((posY - 24) & 0x38) << 2) + (((posY - 24) & 0xC0) << 5));
+	uint8_t* pAttrData = memoryAddress(0x5800 + (((posY - 24) >> 3) << 5));
 	int flashAttr = (m_frameCounter >> 4) & 1;
 	for (posX = 0; posX < 4; posX++) // Left border
 	{
@@ -58,64 +53,6 @@ void ZXSpectrum::drawLine(int posY)
 	if (posY % DMA_BUFF_SIZE == DMA_BUFF_SIZE - 1) m_pDisplayInstance->drawBuffer(buffSwitch, 320 * DMA_BUFF_SIZE);
 }
 
-//void ZXSpectrum::drawLine(int posY)
-//{
-//	uint16_t zxPixelMapAddr, zxColorAttribAddr, tftMemAddr;
-//	uint8_t zxColorAttrib, zxPixelMap, zxBrightFlag, zxInkColor, zxPaperColor, bitPos;
-//	int i, posX, buffSwitch = (posY / DMA_BUFF_SIZE) & 1, buffOffset = (posY % DMA_BUFF_SIZE) * 320;
-//
-//	for (posX = 0; posX < 4; posX++) // Left border
-//	{
-//		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX == m_borderColors[m_pbRIndex].x)
-//		{
-//			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
-//		}
-//		for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i) ^ 1) + buffOffset] = m_borderColor;
-//	}
-//	for (posX = 0; posX < 32; posX++) // Main area
-//	{
-//		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 4 == m_borderColors[m_pbRIndex].x)
-//		{
-//			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
-//		}
-//		if (posY < 24 || posY > 215)
-//			for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i + 32) ^ 1) + buffOffset] = m_borderColor;
-//		else
-//		{
-//			zxColorAttribAddr = 0x5800 + (((posY - 24) / 8) * 32) + posX; 
-//			zxColorAttrib = m_pZXMemory[zxColorAttribAddr];
-//			zxBrightFlag = (zxColorAttrib & 0x40) >> 3;
-//			zxPixelMapAddr = 0x4000 + (((posY - 24) % 64) / 8) * 32 + ((posY - 24) % 8) * 256 + ((posY - 24) / 64) * 2048 + posX;
-//			zxPixelMap = m_pZXMemory[zxPixelMapAddr] ^ ((zxColorAttrib & 0x80) ? ((m_frameCounter & 0x10) ? 255 : 0) : 0);
-//			zxInkColor = zxColorAttrib & 0x07; zxPaperColor = (zxColorAttrib & 0x38) >> 3;
-//			for (i = 0; i < 8; i++)
-//			{
-//				tftMemAddr = posX * 8 + i + 32;	bitPos = (0x80 >> i);
-//				if (zxPixelMap & bitPos)
-//					m_pScreenBuffer[buffSwitch][tftMemAddr + buffOffset] = m_colorLookup[zxInkColor + zxBrightFlag];
-//				else
-//					m_pScreenBuffer[buffSwitch][tftMemAddr + buffOffset] = m_colorLookup[zxPaperColor + zxBrightFlag];
-//			}
-//		}
-//	}
-//	for (posX = 0; posX < 4; posX++) // Right border
-//	{
-//		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 36 == m_borderColors[m_pbRIndex].x)
-//		{
-//			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
-//		}
-//		for (i = 0; i < 8; i++) m_pScreenBuffer[buffSwitch][((posX * 8 + i + 288) ^ 1) + buffOffset] = m_borderColor;
-//	}
-//	for (posX = 0; posX < 16; posX++) // Retrace
-//	{
-//		if (m_pbRIndex != m_pbWIndex && posY == m_borderColors[m_pbRIndex].y && posX + 40 == m_borderColors[m_pbRIndex].x)
-//		{
-//			m_borderColor = m_borderColors[m_pbRIndex].color; m_pbRIndex = (++m_pbRIndex) & (BORDER_BUFFER_SIZE - 1);
-//		}
-//	}
-//	if (posY % DMA_BUFF_SIZE == DMA_BUFF_SIZE - 1) m_pDisplayInstance->drawBuffer(buffSwitch, 320 * DMA_BUFF_SIZE);
-//}
-
 void ZXSpectrum::intZ80()
 {
 	if (IFF1 && !m_Z80Processor.skipINT)
@@ -150,6 +87,34 @@ void ZXSpectrum::intZ80()
 	}
 }
 
+void ZXSpectrum::startTape(File& file, uint32_t sectionSize)
+{
+	m_activeFile = file; m_currSectionSize = sectionSize;
+	m_TAPSection = { 0 };
+	m_TAPSection.data = m_pDataBuffer;
+	if (!fetchTapeData()) return;
+	//m_TAPSection.size = (m_currSectionSize > 1023 ? 1023: m_currSectionSize);
+	//m_TAPSection.bit = 0;
+	m_ZXTape.isTapeActive = true; // start
+	m_ZXTape.tapeState = 2; // PILOT tone
+	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
+	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
+	m_tapeBit = 0;
+}
+
+bool ZXSpectrum::fetchTapeData()
+{
+	uint32_t bytesToRead = (m_currSectionSize > 1024 ? 1024 : m_currSectionSize);
+	if (!bytesToRead) return false;
+	if (bytesToRead < 1024) m_pDataBuffer[bytesToRead] = 0;
+	if (m_activeFile.readBytes((char*)m_pDataBuffer, bytesToRead) != bytesToRead) return false;
+	DBG_PRINTF("%d - %d\n", m_currSectionSize, bytesToRead);
+	m_currSectionSize -= bytesToRead;
+	m_TAPSection.size = bytesToRead;
+	m_TAPSection.bit = 0;
+	return true;
+}
+
 void ZXSpectrum::processTape()
 {
 	m_tapeBit ^= 0x01;
@@ -160,9 +125,19 @@ void ZXSpectrum::processTape()
 		m_ZXTape.tapeState++; // Next state (PILOT->SYNCRO HIGH->SYNCRO LOW)
 	else
 	{
-		m_ZXTape.tapeState = (m_TAPSection.data[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
-		m_TAPSection.bit++;
-		if (m_TAPSection.bit > (m_TAPSection.size << 3)) stopTape();
+		if (m_TAPSection.lastBit)
+		{
+			m_ZXTape.tapeState = 0;
+			stopTape();
+		}
+		else
+		{
+
+			m_ZXTape.tapeState = (m_TAPSection.data[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
+			m_TAPSection.bit++;
+			if (m_TAPSection.bit == (m_TAPSection.size << 3))
+				if (!fetchTapeData()) m_TAPSection.lastBit = true;
+		}
 	}
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles; // renew state cycles
 	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount; // set state count
@@ -171,14 +146,13 @@ void ZXSpectrum::processTape()
 void ZXSpectrum::writeMem(uint16_t address, uint8_t data)
 {
 	contendedAccess(address, 3);
-	if (address >= 0x4000) m_pZXMemory[address] = data;
+	if (address >> 14) *memoryAddress(address) = data;
 }
 
 uint8_t ZXSpectrum::readMem(uint16_t address)
 {
 	contendedAccess(address, 3);
-	//if (address < 0x4000) return rom82[address];
-	return m_pZXMemory[address];
+	return *memoryAddress(address);
 }
 
 uint8_t ZXSpectrum::unattachedPort()
@@ -196,11 +170,11 @@ uint8_t ZXSpectrum::unattachedPort()
 	case 5:
 		posX++;
 	case 3:
-		return m_pZXMemory[0x5800 + ((posY / 8) * 32) + posX];
+		return *memoryAddress(0x5800 + ((posY / 8) * 32) + posX);
 	case 4:
 		posX++;
 	case 2:
-		return m_pZXMemory[0x4000 + ((posY % 64) / 8) * 32 + (posY % 8) * 256 + (posY / 64) * 2048 + posX];
+		return *memoryAddress(0x4000 + ((posY % 64) / 8) * 32 + (posY % 8) * 256 + (posY / 64) * 2048 + posX);
 	case 0:
 	case 1:
 	case 6:
@@ -286,7 +260,7 @@ void ZXSpectrum::stepZ80()
 	void** pRegisters;
 	void** pPairs;
 	contendedAccess(PC, 4);
-	uint8_t opcode = m_pZXMemory[PC];
+	uint8_t opcode = *memoryAddress(PC);
 	PC++; R++;
 	uint8_t last_Q = Q; /* keep Q value from previous opcode for SCF and CCF */
 	Q = 0; /* preempt Q value assuming next opcode doesn't set flags */
@@ -1488,16 +1462,16 @@ void ZXSpectrum::stepZ80()
 			if (pRegisters != m_Z80Processor.pRegisters)
 			{
 				contendedAccess(PC, 3);
-				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)m_pZXMemory[PC];
+				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)(*memoryAddress(PC));
 				PC++;
 				contendedAccess(PC, 3);
-				opcode = m_pZXMemory[PC];;
+				opcode = *memoryAddress(PC);
 				contendedAccess(PC, 1); contendedAccess(PC, 1);
 			}
 			else
 			{
 				contendedAccess(PC, 4);
-				opcode = m_pZXMemory[PC];
+				opcode = *memoryAddress(PC);
 				R++;
 			}
 			instruction = cbInstructionTable[opcode];
@@ -1513,7 +1487,7 @@ void ZXSpectrum::stepZ80()
 		case ED_PREFIX:
 		{
 			contendedAccess(PC, 4);
-			opcode = m_pZXMemory[PC];
+			opcode = *memoryAddress(PC);
 			instruction = edInstructionTable[opcode];
 			PC++;
 			R++;
@@ -1539,29 +1513,30 @@ bool ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 	m_pDisplayInstance = pDisplayInstance;
 	for (uint8_t i = 0; i < 2; i++) m_pScreenBuffer[i] = (uint32_t*)m_pDisplayInstance->getBuffer(i);
 	m_pInPorts = pKeyboardInstance->getBuffer();
-	if ((m_pZXMemory = (uint8_t*)malloc(65536)) == NULL) { printf("Error allocating ZXMemory"); return false; }
-	//if ((m_pZXMemory = (uint8_t*)malloc(131072)) == NULL) { printf("Error allocating ZXMemory"); return false; }
-	if (!loadROMFile(romFile)) return false;
+	setMemPageAddr(0, zxROM);
+	setMemPageAddr(1, m_zxRAM[5]);
+	setMemPageAddr(2, m_zxRAM[2]);
+	setMemPageAddr(3, m_zxRAM[0]);
 	m_initComplete = true;
 	return m_initComplete;
 }
 
-bool ZXSpectrum::loadROMFile(const char* pFileName)
-{
-	if (!LittleFS.begin()) { DBG_PRINTLN("FS Mount Failed"); return false; }
-	if (!LittleFS.exists(pFileName)) { DBG_PRINTLN("ROM image not found"); return false; }
-	File romFile = LittleFS.open(pFileName, "r");
-	if (!(romFile.read(m_pZXMemory, 16384) == 16384)) { DBG_PRINTLN("Error reading ROM image"); romFile.close(); return false; }
-	romFile.close();
-	LittleFS.end();
-	return true;
-}
+//bool ZXSpectrum::loadROMFile(const char* pFileName)
+//{
+//	//if (!LittleFS.begin()) { DBG_PRINTLN("FS Mount Failed"); return false; }
+//	//if (!LittleFS.exists(pFileName)) { DBG_PRINTLN("ROM image not found"); return false; }
+//	//File romFile = LittleFS.open(pFileName, "r");
+//	//if (!(romFile.read(m_pZXMemory, 16384) == 16384)) { DBG_PRINTLN("Error reading ROM image"); romFile.close(); return false; }
+//	//romFile.close();
+//	//LittleFS.end();
+//	return true;
+//}
 
 void ZXSpectrum::resetZ80()
 {
 	stopTape();
 	m_Z80Processor = { 0 };
-	m_maxEmulTime = /*m_overStates = */0;
+	m_maxEmulTime = 0;
 	m_Z80Processor.pRegisters[0] = m_Z80Processor.pDDRegisters[0] = m_Z80Processor.pFDRegisters[0] = &B;
 	m_Z80Processor.pRegisters[1] = m_Z80Processor.pDDRegisters[1] = m_Z80Processor.pFDRegisters[1] = &C;
 	m_Z80Processor.pRegisters[2] = m_Z80Processor.pDDRegisters[2] = m_Z80Processor.pFDRegisters[2] = &D;
@@ -1600,7 +1575,6 @@ void ZXSpectrum::loopZ80()
 		if (m_scanLine != scanLine)
 		{
 			m_scanLine = scanLine;
-			//if (m_Z80Processor.tCount % 224 > m_overStates) m_overStates = m_Z80Processor.tCount % 224;
 			if (m_scanLine >= SCREENOFFSET && m_scanLine <= SCREENOFFSET + 239) drawLine(m_scanLine - SCREENOFFSET);
 		}
 	}
@@ -1632,15 +1606,15 @@ void ZXSpectrum::tapeMode(bool isTurbo)
 {
 	if (isTurbo)
 	{
-		m_pZXMemory[1409] = 206;
-		m_pZXMemory[1416] = 227;
-		m_pZXMemory[1424] = 228;
-		m_pZXMemory[1432] = 236;
-		m_pZXMemory[1446] = 216;
-		m_pZXMemory[1479] = 217;
-		m_pZXMemory[1487] = 229;
-		m_pZXMemory[1492] = 215;
-		m_pZXMemory[1512] = 5;
+		*memoryAddress(1409) = 206;
+		*memoryAddress(1416) = 227;
+		*memoryAddress(1424) = 228;
+		*memoryAddress(1432) = 236;
+		*memoryAddress(1446) = 216;
+		*memoryAddress(1479) = 217;
+		*memoryAddress(1487) = 229;
+		*memoryAddress(1492) = 215;
+		*memoryAddress(1512) = 5;
 		m_tapeStates[0] = { 427, 2 };
 		m_tapeStates[1] = { 855, 2 };
 		m_tapeStates[2] = { 1084, 4846 };
@@ -1649,15 +1623,15 @@ void ZXSpectrum::tapeMode(bool isTurbo)
 	}
 	else
 	{
-		m_pZXMemory[1409] = 156;
-		m_pZXMemory[1416] = 198;
-		m_pZXMemory[1424] = 201;
-		m_pZXMemory[1432] = 212;
-		m_pZXMemory[1446] = 176;
-		m_pZXMemory[1479] = 178;
-		m_pZXMemory[1487] = 203;
-		m_pZXMemory[1492] = 176;
-		m_pZXMemory[1512] = 22;
+		*memoryAddress(1409) = 156;
+		*memoryAddress(1416) = 198;
+		*memoryAddress(1424) = 201;
+		*memoryAddress(1432) = 212;
+		*memoryAddress(1446) = 176;
+		*memoryAddress(1479) = 178;
+		*memoryAddress(1487) = 203;
+		*memoryAddress(1492) = 176;
+		*memoryAddress(1512) = 22;
 		m_tapeStates[0] = { 855, 2 };
 		m_tapeStates[1] = { 1710, 2 };
 		m_tapeStates[2] = { 2168, 4846 };
@@ -1668,25 +1642,25 @@ void ZXSpectrum::tapeMode(bool isTurbo)
 
 void ZXSpectrum::storeState(const char* pFileName)
 {
-	LittleFS.begin();
-	File storeFile = LittleFS.open(pFileName, "w");
-	if (storeFile.write(m_pZXMemory + 16384, 49152) != 49152 || storeFile.write((uint8_t*)&m_Z80Processor, sizeof(m_Z80Processor)) != sizeof(m_Z80Processor) || storeFile.write((uint8_t*)&m_borderColor, sizeof(m_borderColor)) != sizeof(m_borderColor))
-	{
-		DBG_PRINTLN("Error saving state file");
-	}
-	storeFile.close();
-	LittleFS.end();
+	//LittleFS.begin();
+	//File storeFile = LittleFS.open(pFileName, "w");
+	//if (storeFile.write(m_pZXMemory + 16384, 49152) != 49152 || storeFile.write((uint8_t*)&m_Z80Processor, sizeof(m_Z80Processor)) != sizeof(m_Z80Processor) || storeFile.write((uint8_t*)&m_borderColor, sizeof(m_borderColor)) != sizeof(m_borderColor))
+	//{
+	//	DBG_PRINTLN("Error saving state file");
+	//}
+	//storeFile.close();
+	//LittleFS.end();
 	//stopTape();
 }
 
 void ZXSpectrum::restoreState(const char* pFileName)
 {
-	LittleFS.begin();
-	File storeFile = LittleFS.open(pFileName, "r");
-	if (storeFile.read(m_pZXMemory + 16384, 49152) != 49152 || storeFile.read((uint8_t*)&m_Z80Processor, sizeof(m_Z80Processor)) != sizeof(m_Z80Processor) || storeFile.read((uint8_t*)&m_borderColor, sizeof(m_borderColor)) != sizeof(m_borderColor))
-	{
-		DBG_PRINTLN("Error loading state file");
-	}
-	storeFile.close();
-	LittleFS.end();
+	//LittleFS.begin();
+	//File storeFile = LittleFS.open(pFileName, "r");
+	//if (storeFile.read(m_pZXMemory + 16384, 49152) != 49152 || storeFile.read((uint8_t*)&m_Z80Processor, sizeof(m_Z80Processor)) != sizeof(m_Z80Processor) || storeFile.read((uint8_t*)&m_borderColor, sizeof(m_borderColor)) != sizeof(m_borderColor))
+	//{
+	//	DBG_PRINTLN("Error loading state file");
+	//}
+	//storeFile.close();
+	//LittleFS.end();
 }

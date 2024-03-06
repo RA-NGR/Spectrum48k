@@ -3,10 +3,11 @@
 #include "Common.h"
 #include "ZXMacros.h"
 #include "ZXPeripherals.h"
+//#include "ROM82.h"
 
 enum {
 	ADD_HL_RR,
-	AL_R,
+	AL_R, // 8-bit arithmetic and logical ops
 	DEC_8,
 	DEC_RR,
 	EX_INDIRECT_SP_HL,
@@ -54,10 +55,10 @@ enum {
 	RLA,
 	RRCA,
 	RRA,
-	RS_R,
+	RS_R, // 8-bit rotate and shift ops
 	RLD_RRD,
 	BIT_B_R,
-	SR_B_R,
+	SR_B_R, // 8-bit set and reset bit ops
 	JP_NN,
 	JR_E,
 	DJNZ_E,
@@ -302,8 +303,6 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[2
 
 class ZXSpectrum
 {
-	//const uint16_t m_colorLookup16[16] = { 0x0000, 0x1700, 0x00B8, 0x17B8, 0xE005, 0xF705, 0xE0BD, 0xF7BD,
-	//									   0x0000, 0x1F00, 0x00F8, 0x1FF8, 0xE007, 0xFF07, 0xE0FF, 0xFFFF };
 	const uint32_t m_colorLookup[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
 										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
 	const uint32_t m_colorInvertMask[2] = { 0x00, 0xFF };
@@ -371,11 +370,12 @@ class ZXSpectrum
 	uint32_t m_borderColor = m_colorLookup[7]; // border color out of visible area
 	uint8_t m_frameCounter = 0;
 	uint8_t* m_pZXMemory;
+	//uint8_t* m_pZXROM;
 	uint32_t* m_pScreenBuffer[2];
 	bool m_initComplete = false;
 	bool m_debugActvie = false;
 	int16_t m_scanLine = -1;
-	uint32_t m_emulationTime = 0, m_maxEmulTime = 0/*, m_overStates = 0*/;
+	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;
 	union PortFE
 	{
 		struct
@@ -418,7 +418,6 @@ public:
 	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
-	//uint32_t getOverstates() { return m_overStates;	};
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
 	void startTape(uint8_t* pBuffer, uint32_t bufferSize);
 	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };

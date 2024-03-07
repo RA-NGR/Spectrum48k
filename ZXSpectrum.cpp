@@ -87,77 +87,48 @@ void ZXSpectrum::intZ80()
 	}
 }
 
-//void ZXSpectrum::startTape(File* file, uint32_t sectionSize)
-//{
-//	m_pActiveFile = file; m_currSectionSize = sectionSize;
-//	m_pActiveFile->setTimeout(1500);
-//	m_TAPSection = { 0 };
-//	m_TAPSection.data = m_pDataBuffer;
-//	if (!fetchTapeData()) return;
-//	m_ZXTape.isTapeActive = true; // start
-//	m_ZXTape.tapeState = 2; // PILOT tone
-//	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
-//	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
-//	m_tapeBit = 0;
-//}
-
-void ZXSpectrum::startTape(uint8_t* pBuffer, uint32_t bufferSize)
+void ZXSpectrum::startTape(File* file, uint16_t sectionSize)
 {
 	m_TAPSection = { 0 };
-	m_TAPSection.data = pBuffer; m_TAPSection.size = bufferSize;
-	m_TAPSection.bit = 0;
+	m_TAPSection.pFile = file; m_TAPSection.sectionSize = sectionSize;
+	if (!fetchTapeData()) return;
 	m_ZXTape.isTapeActive = true; // start
 	m_ZXTape.tapeState = 2; // PILOT tone
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
 	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
+	m_tapeBit = 0;
 }
+
+//void ZXSpectrum::startTape(uint8_t* pBuffer, uint32_t bufferSize)
+//{
+//	m_TAPSection = { 0 };
+//	m_TAPSection.data = pBuffer; m_TAPSection.size = bufferSize;
+//	m_TAPSection.bit = 0;
+//	m_ZXTape.isTapeActive = true; // start
+//	m_ZXTape.tapeState = 2; // PILOT tone
+//	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
+//	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
+//}
 
 bool ZXSpectrum::fetchTapeData()
 {
-	uint32_t bytesToRead = (m_currSectionSize > TAP_BUFFER_SIZE ? TAP_BUFFER_SIZE : m_currSectionSize);
+	uint32_t bytesToRead = (m_TAPSection.sectionSize > TAP_BUFFER_SIZE ? TAP_BUFFER_SIZE : m_TAPSection.sectionSize);
 	size_t readed = 0;
 	if (!bytesToRead) return false;
-	if (bytesToRead < TAP_BUFFER_SIZE) m_pDataBuffer[bytesToRead] = 0;
-	if ((readed = m_pActiveFile->readBytes((char*)m_pDataBuffer, bytesToRead)) != bytesToRead)
+	if ((readed = m_TAPSection.pFile->readBytes((char*)m_TAPSection.dataBuffer, bytesToRead)) != bytesToRead)
 	{
-		DBG_PRINTF("Error reading block, readed %d of %d, file is %s, timeout %d\n", readed, bytesToRead, (m_pActiveFile->available() ? "available" : "not available"), m_pActiveFile->getTimeout());
+//		DBG_PRINTF("Error reading block, readed %d of %d, file pos %d\n", readed, bytesToRead, m_pActiveFile->position());
 		return false;
 	}
-	m_currSectionSize -= bytesToRead;
-	m_TAPSection.size = bytesToRead;
+	m_TAPSection.sectionSize -= bytesToRead;
+	m_TAPSection.dataSize = bytesToRead;
 	m_TAPSection.bit = 0;
-	m_TAPSection.lastBit = false;
 	return true;
-}
-
-void ZXSpectrum::processTape()
-{
-	m_tapeBit ^= 0x40;
-	m_ZXTape.statesCount--;
-	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles + m_ZXTape.stateCycles; // restore state cycles
-	if (m_ZXTape.statesCount > 0) return;
-	if (m_ZXTape.tapeState > 1 && m_ZXTape.tapeState < 4)
-		m_ZXTape.tapeState++; // Next state (PILOT->SYNCRO HIGH->SYNCRO LOW)
-	else
-	{
-		if (!m_TAPSection.lastBit)
-		{
-			m_ZXTape.tapeState = (m_TAPSection.data[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
-			m_TAPSection.bit++;
-			if (m_TAPSection.bit == (m_TAPSection.size << 3)) m_TAPSection.lastBit = true;
-		}
-		else
-		{
-			stopTape();
-		}
-	}
-	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles; // renew state cycles
-	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount; // set state count
 }
 
 //void ZXSpectrum::processTape()
 //{
-//	m_tapeBit ^= 0x01;
+//	m_tapeBit ^= 0x40;
 //	m_ZXTape.statesCount--;
 //	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles + m_ZXTape.stateCycles; // restore state cycles
 //	if (m_ZXTape.statesCount > 0) return;
@@ -169,17 +140,38 @@ void ZXSpectrum::processTape()
 //		{
 //			m_ZXTape.tapeState = (m_TAPSection.data[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
 //			m_TAPSection.bit++;
-//			if (m_TAPSection.bit == (m_TAPSection.size << 3)) 
-//				if (!fetchTapeData()) m_TAPSection.lastBit = true;
+//			if (m_TAPSection.bit == (m_TAPSection.size << 3)) m_TAPSection.lastBit = true;
 //		}
 //		else
-//		{
 //			stopTape();
-//		}
 //	}
 //	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles; // renew state cycles
 //	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount; // set state count
 //}
+
+void ZXSpectrum::processTape()
+{
+	m_tapeBit ^= 0x01;
+	m_ZXTape.statesCount--;
+	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles + m_ZXTape.stateCycles; // restore state cycles
+	if (m_ZXTape.statesCount > 0) return;
+	if (m_ZXTape.tapeState > 1 && m_ZXTape.tapeState < 4)
+		m_ZXTape.tapeState++; // Next state (PILOT->SYNCRO HIGH->SYNCRO LOW)
+	else
+	{
+		if (!m_TAPSection.lastBit)
+		{
+			m_ZXTape.tapeState = (m_TAPSection.dataBuffer[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
+			m_TAPSection.bit++;
+			if (m_TAPSection.bit == (m_TAPSection.dataSize << 3)) 
+				if (!fetchTapeData()) m_TAPSection.lastBit = true;
+		}
+		else
+			stopTape();
+	}
+	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles; // renew state cycles
+	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount; // set state count
+}
 
 void ZXSpectrum::writeMem(uint16_t address, uint8_t data)
 {
@@ -1548,13 +1540,14 @@ void ZXSpectrum::stepZ80()
 bool ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 {
 	char romFile[] = "/BASIC82.rom";
+	uint8_t i;
 	m_pDisplayInstance = pDisplayInstance;
-	for (uint8_t i = 0; i < 2; i++) m_pScreenBuffer[i] = (uint32_t*)m_pDisplayInstance->getBuffer(i);
+	for (i = 0; i < 2; i++) m_pScreenBuffer[i] = (uint32_t*)m_pDisplayInstance->getBuffer(i);
 	m_pInPorts = pKeyboardInstance->getBuffer();
 	setMemPageAddr(0, zxROM);
-	setMemPageAddr(1, m_zxRAM[5]);
-	setMemPageAddr(2, m_zxRAM[2]);
-	setMemPageAddr(3, m_zxRAM[0]);
+	setMemPageAddr(1, m_RAM[5]);
+	setMemPageAddr(2, m_RAM[2]);
+	setMemPageAddr(3, m_RAM[0]);
 	m_initComplete = true;
 	return m_initComplete;
 }

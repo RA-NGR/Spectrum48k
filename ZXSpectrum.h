@@ -354,8 +354,10 @@ class ZXSpectrum
 	};
 	struct TAPData
 	{
-		uint16_t size;
-		uint8_t* data;
+		File* pFile;
+		uint16_t sectionSize;
+		uint16_t dataSize;
+		uint8_t dataBuffer[TAP_BUFFER_SIZE];
 		uint32_t bit;
 		bool lastBit;
 	} m_TAPSection;
@@ -370,7 +372,7 @@ class ZXSpectrum
 	uint8_t m_pbRIndex = 0; // rd index of ring buffer
 	uint32_t m_borderColor = m_colorLookup[7]; // border color out of visible area
 	uint8_t m_frameCounter = 0;
-	uint8_t m_zxRAM[6][1 << 14];
+	uint8_t m_RAM[8][1 << 14];
 	uint8_t* m_pMemPages[4];
 	uint32_t* m_pScreenBuffer[2];
 	bool m_initComplete = false;
@@ -409,9 +411,6 @@ class ZXSpectrum
 	void /*__attribute__((section(".time_critical." "drawLine")))*/ drawLine(int posY);
 	void __attribute__((section(".time_critical." "intZ80"))) intZ80();
 
-	File* m_pActiveFile;
-	uint32_t m_currSectionSize;
-	uint8_t m_pDataBuffer[TAP_BUFFER_SIZE + 1];
 	void processTape();
 	bool fetchTapeData();
 
@@ -430,9 +429,9 @@ public:
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
-	void startTape(uint8_t* pBuffer, uint32_t bufferSize);
-//	void startTape(File* file, uint32_t sectionSize);
-	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; m_pActiveFile = NULL; };
+	//void startTape(uint8_t* pBuffer, uint32_t bufferSize);
+	void startTape(File* file, uint16_t sectionSize);
+	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
 	void tapeMode(bool isTurbo = false);
 	void storeState(const char* pFileName);

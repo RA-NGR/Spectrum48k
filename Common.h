@@ -59,7 +59,7 @@
 #define KBD_CLOCK 1000
 #define SOUND_BUFFER_SIZE 1024
 
-#define TAP_BUFFER_SIZE 4096
+#define TAP_BUFFER_SIZE 16384
 
 #ifdef DBG
 #define DBG_PRINT(a) Serial.print(a)

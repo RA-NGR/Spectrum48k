@@ -87,37 +87,52 @@ void ZXSpectrum::intZ80()
 	}
 }
 
-void ZXSpectrum::startTape(File& file, uint32_t sectionSize)
+//void ZXSpectrum::startTape(File* file, uint32_t sectionSize)
+//{
+//	m_pActiveFile = file; m_currSectionSize = sectionSize;
+//	m_pActiveFile->setTimeout(1500);
+//	m_TAPSection = { 0 };
+//	m_TAPSection.data = m_pDataBuffer;
+//	if (!fetchTapeData()) return;
+//	m_ZXTape.isTapeActive = true; // start
+//	m_ZXTape.tapeState = 2; // PILOT tone
+//	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
+//	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
+//	m_tapeBit = 0;
+//}
+
+void ZXSpectrum::startTape(uint8_t* pBuffer, uint32_t bufferSize)
 {
-	m_activeFile = file; m_currSectionSize = sectionSize;
 	m_TAPSection = { 0 };
-	m_TAPSection.data = m_pDataBuffer;
-	if (!fetchTapeData()) return;
-	//m_TAPSection.size = (m_currSectionSize > 1023 ? 1023: m_currSectionSize);
-	//m_TAPSection.bit = 0;
+	m_TAPSection.data = pBuffer; m_TAPSection.size = bufferSize;
+	m_TAPSection.bit = 0;
 	m_ZXTape.isTapeActive = true; // start
 	m_ZXTape.tapeState = 2; // PILOT tone
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
 	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
-	m_tapeBit = 0;
 }
 
 bool ZXSpectrum::fetchTapeData()
 {
-	uint32_t bytesToRead = (m_currSectionSize > 1024 ? 1024 : m_currSectionSize);
+	uint32_t bytesToRead = (m_currSectionSize > TAP_BUFFER_SIZE ? TAP_BUFFER_SIZE : m_currSectionSize);
+	size_t readed = 0;
 	if (!bytesToRead) return false;
-	if (bytesToRead < 1024) m_pDataBuffer[bytesToRead] = 0;
-	if (m_activeFile.readBytes((char*)m_pDataBuffer, bytesToRead) != bytesToRead) return false;
-	DBG_PRINTF("%d - %d\n", m_currSectionSize, bytesToRead);
+	if (bytesToRead < TAP_BUFFER_SIZE) m_pDataBuffer[bytesToRead] = 0;
+	if ((readed = m_pActiveFile->readBytes((char*)m_pDataBuffer, bytesToRead)) != bytesToRead)
+	{
+		DBG_PRINTF("Error reading block, readed %d of %d, file is %s, timeout %d\n", readed, bytesToRead, (m_pActiveFile->available() ? "available" : "not available"), m_pActiveFile->getTimeout());
+		return false;
+	}
 	m_currSectionSize -= bytesToRead;
 	m_TAPSection.size = bytesToRead;
 	m_TAPSection.bit = 0;
+	m_TAPSection.lastBit = false;
 	return true;
 }
 
 void ZXSpectrum::processTape()
 {
-	m_tapeBit ^= 0x01;
+	m_tapeBit ^= 0x40;
 	m_ZXTape.statesCount--;
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles + m_ZXTape.stateCycles; // restore state cycles
 	if (m_ZXTape.statesCount > 0) return;
@@ -125,23 +140,46 @@ void ZXSpectrum::processTape()
 		m_ZXTape.tapeState++; // Next state (PILOT->SYNCRO HIGH->SYNCRO LOW)
 	else
 	{
-		if (m_TAPSection.lastBit)
+		if (!m_TAPSection.lastBit)
 		{
-			m_ZXTape.tapeState = 0;
-			stopTape();
+			m_ZXTape.tapeState = (m_TAPSection.data[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
+			m_TAPSection.bit++;
+			if (m_TAPSection.bit == (m_TAPSection.size << 3)) m_TAPSection.lastBit = true;
 		}
 		else
 		{
-
-			m_ZXTape.tapeState = (m_TAPSection.data[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
-			m_TAPSection.bit++;
-			if (m_TAPSection.bit == (m_TAPSection.size << 3))
-				if (!fetchTapeData()) m_TAPSection.lastBit = true;
+			stopTape();
 		}
 	}
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles; // renew state cycles
 	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount; // set state count
 }
+
+//void ZXSpectrum::processTape()
+//{
+//	m_tapeBit ^= 0x01;
+//	m_ZXTape.statesCount--;
+//	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles + m_ZXTape.stateCycles; // restore state cycles
+//	if (m_ZXTape.statesCount > 0) return;
+//	if (m_ZXTape.tapeState > 1 && m_ZXTape.tapeState < 4)
+//		m_ZXTape.tapeState++; // Next state (PILOT->SYNCRO HIGH->SYNCRO LOW)
+//	else
+//	{
+//		if (!m_TAPSection.lastBit)
+//		{
+//			m_ZXTape.tapeState = (m_TAPSection.data[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
+//			m_TAPSection.bit++;
+//			if (m_TAPSection.bit == (m_TAPSection.size << 3)) 
+//				if (!fetchTapeData()) m_TAPSection.lastBit = true;
+//		}
+//		else
+//		{
+//			stopTape();
+//		}
+//	}
+//	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles; // renew state cycles
+//	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount; // set state count
+//}
 
 void ZXSpectrum::writeMem(uint16_t address, uint8_t data)
 {
@@ -1590,17 +1628,17 @@ void ZXSpectrum::loopZ80()
 	while (!(rp2040.fifo.pop() & STOP_FRAME));
 }
 
-void ZXSpectrum::startTape(uint8_t* pBuffer, uint32_t bufferSize)
-{
-	m_TAPSection = { 0 };
-	m_TAPSection.data = pBuffer; m_TAPSection.size = bufferSize;
-	m_TAPSection.bit = 0;
-	m_ZXTape.isTapeActive = true; // start
-	m_ZXTape.tapeState = 2; // PILOT tone
-	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
-	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
-	m_tapeBit = 0;
-}
+//void ZXSpectrum::startTape(uint8_t* pBuffer, uint32_t bufferSize)
+//{
+//	m_TAPSection = { 0 };
+//	m_TAPSection.data = pBuffer; m_TAPSection.size = bufferSize;
+//	m_TAPSection.bit = 0;
+//	m_ZXTape.isTapeActive = true; // start
+//	m_ZXTape.tapeState = 2; // PILOT tone
+//	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
+//	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
+//	m_tapeBit = 0;
+//}
 
 void ZXSpectrum::tapeMode(bool isTurbo)
 {

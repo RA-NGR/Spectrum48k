@@ -55,16 +55,16 @@ bool readTAPSection(File& file)
 {
 	free(g_zxTape.pTapBuffer); g_zxTape.pTapBuffer = NULL;
 	if (file.readBytes((char*)&g_zxTape.tapSize, 2) != 2) return false;
-	//if ((g_zxTape.pTapBuffer = (uint8_t*)malloc(g_zxTape.tapSize + 1)) == NULL)
-	//{
-	//	{
-	//		DBG_PRINTF("Error allocating %ld bytes\n", g_zxTape.tapSize);
-	//		return false;
-	//	}
+	if ((g_zxTape.pTapBuffer = (uint8_t*)malloc(g_zxTape.tapSize/* + 1*/)) == NULL)
+	{
+		{
+			DBG_PRINTF("Error allocating %ld bytes\n", g_zxTape.tapSize);
+			return false;
+		}
 
-	//}
-	//g_zxTape.pTapBuffer[g_zxTape.tapSize] = 0x00;
-	//if (file.readBytes((char*)g_zxTape.pTapBuffer, g_zxTape.tapSize) != g_zxTape.tapSize) return false;
+	}
+//	g_zxTape.pTapBuffer[g_zxTape.tapSize] = 0x00;
+	if (file.readBytes((char*)g_zxTape.pTapBuffer, g_zxTape.tapSize) != g_zxTape.tapSize) return false;
 	return true;
 }
 
@@ -89,8 +89,8 @@ void loop()
 				}
 				else
 				{
-//					g_zxEmulator.startTape(g_zxTape.pTapBuffer, g_zxTape.tapSize);
-					g_zxEmulator.startTape(g_zxTape.tapFile, g_zxTape.tapSize);
+					g_zxEmulator.startTape(g_zxTape.pTapBuffer, g_zxTape.tapSize);
+//					g_zxEmulator.startTape(&g_zxTape.tapFile, g_zxTape.tapSize);
 					g_zxTape.tapePause = -1;
 				}
 			}
@@ -155,7 +155,8 @@ void loop()
 					if (readTAPSection(g_zxTape.tapFile))
 					{
 						g_zxTape.tapActive = true; g_zxTape.tapePause = -1;
-						g_zxEmulator.startTape(g_zxTape.tapFile, g_zxTape.tapSize);
+						g_zxEmulator.startTape(g_zxTape.pTapBuffer, g_zxTape.tapSize);
+//						g_zxEmulator.startTape(&g_zxTape.tapFile, g_zxTape.tapSize);
 					}
 				}
 				else

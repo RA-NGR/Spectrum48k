@@ -409,9 +409,9 @@ class ZXSpectrum
 	void /*__attribute__((section(".time_critical." "drawLine")))*/ drawLine(int posY);
 	void __attribute__((section(".time_critical." "intZ80"))) intZ80();
 
-	File m_activeFile;
+	File* m_pActiveFile;
 	uint32_t m_currSectionSize;
-	uint8_t m_pDataBuffer[1024];
+	uint8_t m_pDataBuffer[TAP_BUFFER_SIZE + 1];
 	void processTape();
 	bool fetchTapeData();
 
@@ -431,8 +431,8 @@ public:
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
 	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
 	void startTape(uint8_t* pBuffer, uint32_t bufferSize);
-	void startTape(File& file, uint32_t sectionSize);
-	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
+//	void startTape(File* file, uint32_t sectionSize);
+	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; m_pActiveFile = NULL; };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
 	void tapeMode(bool isTurbo = false);
 	void storeState(const char* pFileName);

@@ -303,11 +303,8 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[2
 
 class ZXSpectrum
 {
-	const uint32_t m_colorLookup[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
-										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
-	const uint32_t m_colorInvertMask[2] = { 0x00, 0xFF };
-	const uint32_t m_pixelBitMask[4] = { 0x00000000, 0xFFFF0000, 0x0000FFFF, 0xFFFFFFFF };
-
+private:
+// Processor
 	typedef union
 	{
 		struct { uint8_t l, h; } b; // Little Endian
@@ -334,6 +331,9 @@ class ZXSpectrum
 		void* pFDRegisters[8];
 		void* pFDPairs[5];
 	} m_Z80Processor;
+	void __attribute__((section(".time_critical." "intZ80"))) intZ80();
+	void __attribute__((section(".time_critical." "stepZ80"))) stepZ80();
+// Tape 
 	struct Tape
 	{
 		bool isTapeActive; // Tape running
@@ -359,26 +359,14 @@ class ZXSpectrum
 		uint16_t dataSize;
 		uint8_t dataBuffer[TAP_BUFFER_SIZE];
 		uint32_t bit;
-		bool lastBit;
+		bool isLastBit;
 	} m_TAPSection;
 	uint8_t m_tapeBit = 0;
-	struct BorderColors
-	{
-		uint16_t x;
-		uint8_t y;
-		uint32_t color;
-	} m_borderColors[BORDER_BUFFER_SIZE]; // ring buffer of border colors in visible area (1 color per 8 pixels)
-	uint8_t m_pbWIndex = 0; // wr index of ring buffer
-	uint8_t m_pbRIndex = 0; // rd index of ring buffer
-	uint32_t m_borderColor = m_colorLookup[7]; // border color out of visible area
-	uint8_t m_frameCounter = 0;
-	uint8_t m_RAM[8][1 << 14];
-	uint8_t* m_pMemPages[4];
-	uint32_t* m_pScreenBuffer[2];
-	bool m_initComplete = false;
-	bool m_debugActvie = false;
-	int16_t m_scanLine = -1;
-	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;
+	void processTape();
+	bool fetchTapeData();
+// Computer
+	uint8_t* m_pRAMBanks[8];
+	uint8_t* m_pRAMPages[4];
 	union PortFE
 	{
 		struct
@@ -392,7 +380,33 @@ class ZXSpectrum
 	} m_outPortFE;
 	uint8_t m_defaultPortFal = 0xFF;
 	uint8_t* m_pInPorts;
+	void setMemPageAddr(uint32_t page, uint8_t* ptr) { m_pRAMPages[page] = ptr - (page << 14); };
+	inline uint8_t* memoryAddress(uint32_t address) { return address + m_pRAMPages[address >> 14]; };
+	void __attribute__((section(".time_critical." "writeMem"))) writeMem(uint16_t address, uint8_t data);
+	uint8_t __attribute__((section(".time_critical." "readMem"))) readMem(uint16_t address);
+	uint8_t __attribute__((section(".time_critical." "unattachedPort"))) unattachedPort();
+	void __attribute__((section(".time_critical." "writePort"))) writePort(uint16_t port, uint8_t data);
+	uint8_t __attribute__((section(".time_critical." "readPort"))) readPort(uint16_t port);
+// Graphics out
+	const uint32_t m_colorLookup[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
+										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
+	const uint32_t m_colorInvertMask[2] = { 0x00, 0xFF };
+	const uint32_t m_pixelBitMask[4] = { 0x00000000, 0xFFFF0000, 0x0000FFFF, 0xFFFFFFFF };
+	struct BorderColors
+	{
+		uint16_t x;
+		uint8_t y;
+		uint32_t color;
+	} m_borderColors[BORDER_BUFFER_SIZE]; // ring buffer of border colors in visible area (1 color per 8 pixels)
+	uint8_t m_pbWIndex = 0; // wr index of border ring buffer
+	uint8_t m_pbRIndex = 0; // rd index of border ring buffer
+	uint32_t m_borderColor = m_colorLookup[7]; // border color out of visible area
+	uint8_t m_frameCounter = 0;
+	uint32_t* m_pScreenBuffer[2];
+	int16_t m_scanLine = -1;
 	Display* m_pDisplayInstance;
+	void /*__attribute__((section(".time_critical." "drawLine")))*/ drawLine(int posY);
+// Misc & Diag
 	union ZXSettings
 	{
 		struct
@@ -403,37 +417,27 @@ class ZXSpectrum
 		};
 		uint8_t rawData;
 	} m_emulSettings = { 0x01 };
-
-	void setMemPageAddr(uint32_t page, uint8_t* ptr) { m_pMemPages[page] = ptr - (page << 14); };
-	inline uint8_t* memoryAddress(uint32_t address) { return address + m_pMemPages[address >> 14]; };
-
-	bool m_soundEnabled = true;
-	void /*__attribute__((section(".time_critical." "drawLine")))*/ drawLine(int posY);
-	void __attribute__((section(".time_critical." "intZ80"))) intZ80();
-
-	void processTape();
-	bool fetchTapeData();
-
-	void __attribute__((section(".time_critical." "writeMem"))) writeMem(uint16_t address, uint8_t data);
-	uint8_t __attribute__((section(".time_critical." "readMem"))) readMem(uint16_t address);
-	uint8_t __attribute__((section(".time_critical." "unattachedPort"))) unattachedPort();
-	uint8_t __attribute__((section(".time_critical." "readPort"))) readPort(uint16_t port);
-	void __attribute__((section(".time_critical." "writePort"))) writePort(uint16_t port, uint8_t data);
-	void __attribute__((section(".time_critical." "stepZ80"))) stepZ80();
+	bool m_debugActvie = false;
+	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;
 public:
-	ZXSpectrum() {};
-	~ZXSpectrum() {};
-	bool init(Display* pDisplayInstance, Keyboard* pKeyboardInstance);
+// Processor
 	void resetZ80();
-	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
-	uint32_t getEmulationTime() { return m_emulationTime; };
-	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
-	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
-	//void startTape(uint8_t* pBuffer, uint32_t bufferSize);
-	void startTape(File* file, uint16_t sectionSize);
+// Tape
+	void startTape(File* pFile, uint16_t sectionSize);
 	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
 	void tapeMode(bool isTurbo = false);
+// Computer
+	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
+// Graphics out
+// Init & deinit
+	ZXSpectrum() { };
+	~ZXSpectrum() { };
+	void init(Display* pDisplayInstance, Keyboard* pKeyboardInstance);
+// Misc & Diag
+	uint32_t getEmulationTime() { return m_emulationTime; };
+	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
+	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
 	void storeState(const char* pFileName);
 	void restoreState(const char* pFileName);
 	bool toggleDebug() { m_debugActvie = !m_debugActvie; return m_debugActvie; }

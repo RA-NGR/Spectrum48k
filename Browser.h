@@ -4,7 +4,6 @@
 
 class Browser
 {
-	char m_romFileNames[4][15] = { "/BASIC82.rom", "/BASIC90v1.rom", "/BASIC90v2.rom", "/BASIC91.rom" };
 	Display* m_pDisplayInstance = NULL;
 	Keyboard* m_pKeyboardInstance = NULL;
 	String m_currDir = "/";
@@ -21,7 +20,7 @@ class Browser
 	void getFileList();
 	void chDir();
 	void drawSettingsString();
-	void drawSelectedROM();
+	void drawSelectedMachine();
 	void drawFooter();
 public:
 	Browser(Display* pDisplayInstance, Keyboard* pKeyboardInstance) : m_pDisplayInstance(pDisplayInstance), m_pKeyboardInstance(pKeyboardInstance) {};
@@ -31,7 +30,5 @@ public:
 	String getSelectedFile() { return m_selectedFile; };
 	bool getSoundState() { return m_soundOn; };
 	bool getTapeMode() { return m_tapeTurbo; };
-//	void setTapeMode(bool tapeMode) { m_tapeTurbo = tapeMode; };
-	const char* getROMFileName() { return m_romFileNames[m_currRom]; };
 };
 

@@ -368,19 +368,19 @@ void Browser::getFileList()
 
 void Browser::drawSettingsString()
 {
-	String settingString = "  Звук: ";
+	String settingString = "  Звук : ";
 	settingString += (m_soundOn ? "ВКЛ " : "ВЫКЛ");
-	settingString += "                 Лента: ";
+	settingString += "                Лента: ";
 	settingString += (m_tapeTurbo ? "2Х  " : "1Х  ");
 	drawString(settingString, 0, 25, 0xF7BD, 0x1700, false);
 }
 
-void Browser::drawSelectedROM() 
+void Browser::drawSelectedMachine() 
 {
-	String romString = "  ROM : ";
-	romString += m_romFileNames[m_currRom];
-	for (int i = romString.length(); i < 38; i++) romString += " ";
-	drawString(romString, 0, 26, 0xF7BD, 0x1700);
+	drawString("                                        ", 0, 26, 0xF7BD, 0x1700);
+	String machineString = "  Режим: Spectrum ";
+	machineString += "48";
+	drawString(machineString, 0, 26, 0xF7BD, 0x1700, false);
 }
 
 void Browser::drawFooter()
@@ -388,9 +388,9 @@ void Browser::drawFooter()
 	drawString("----------------------------------------", 0, 23, 0xF7BD, 0x1700);
 	drawString("                                        ", 0, 24, 0xFFFF, 0x1700);
 	drawSettingsString();
-	drawSelectedROM();
+	drawSelectedMachine();
 	drawString("                                        ", 0, 27, 0xFFFF, 0x1700);
-	drawString(" F1-Спр F2-Звук F3-Лента F4-ROM  F5-Вых ", 0, 28, 0xE0FF, 0x1700, false);
+	drawString("F1-Спр F2-Звук F3-Лента F4-48/128 F5-Вых", 0, 28, 0xE0FF, 0x1700, false);
 	drawString("                                        ", 0, 29, 0xFFFF, 0x1700);
 }
 
@@ -441,8 +441,7 @@ bool Browser::run()
 		}
 		if (m_pKeyboardInstance->getData(9) == 0x08)
 		{
-			m_currRom = (m_currRom + 1) & 0x03;
-			drawSelectedROM();
+			drawSelectedMachine();
 			result = true;
 			delay(500);
 		}

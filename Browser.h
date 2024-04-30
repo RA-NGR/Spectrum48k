@@ -22,7 +22,7 @@ class Browser
 			uint8_t unused : 4;
 		} settings;
 		uint8_t raw;
-	} m_settingsData = { .raw = 0x0F };
+	} m_settingsData = { .raw = 0x07 };
 //	bool m_soundOn = true;
 //	uint8_t m_soundVol = 3;
 //	uint8_t m_machineType = 0;

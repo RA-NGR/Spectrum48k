@@ -42,8 +42,6 @@ void Sound::update()
         if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -32, onTimer, this, &m_clockTimer);
         if (ctrlData & WR_PORT)
         {
-//            uint32_t val = (ctrlData & 0x0000FFFF), soundBit = (ctrlData & 0x00010000);
-//            if (val > m_samplesPerLoop) val -= m_samplesPerLoop;
             m_ringBuffer[m_rbWrIndex] = ctrlData & 0x0000FFFF; //val | soundBit;
             m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
         }

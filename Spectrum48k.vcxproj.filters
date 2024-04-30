@@ -50,7 +50,13 @@
     <ClInclude Include="ZXSpectrum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ROM82.h">
+    <ClInclude Include="ROM48.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ROM128-0.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ROM128-1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

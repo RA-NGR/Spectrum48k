@@ -12,7 +12,20 @@ class Browser
 	int m_browseFrom, m_selectionPos, m_filesCount;
 	uint8_t bufferSwitch = 0;
 	String m_selectedFile = "";
-	bool m_soundOn = true, m_tapeTurbo = false;
+	union
+	{
+		struct
+		{
+			uint8_t soundOn : 1;
+			uint8_t soundVol : 2;
+			uint8_t machineType : 1;
+			uint8_t unused : 4;
+		} settings;
+		uint8_t raw;
+	} m_settingsData = { .raw = 0x0F };
+//	bool m_soundOn = true;
+//	uint8_t m_soundVol = 3;
+//	uint8_t m_machineType = 0;
 	uint8_t m_currRom = 0;
 	void drawChar(const uint8_t ch, uint8_t posX, uint16_t foreColor, uint16_t backColor);
 	void listFiles();
@@ -28,7 +41,8 @@ public:
 	void drawString(const String textStr, uint8_t posX, uint8_t posY, uint16_t foreColor, uint16_t backColor, bool isAnsi = true);
 	bool run();
 	String getSelectedFile() { return m_selectedFile; };
-	bool getSoundState() { return m_soundOn; };
-	bool getTapeMode() { return m_tapeTurbo; };
+	bool getSoundState() { return m_settingsData.settings.soundOn; };
+	uint8_t getSoundVolume() { return m_settingsData.settings.soundVol; };
+	bool getMachinType() { return m_settingsData.settings.machineType; };
 };
 

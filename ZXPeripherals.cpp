@@ -8,44 +8,207 @@ Sound::~Sound()
 
 bool Sound::init()
 {
-	m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(1);
-	pinMode(SND_PIN, OUTPUT);
-	digitalWriteFast(SND_PIN, 0);
-	return true;
+    //m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(1);
+    //pinMode(SND_PIN, OUTPUT);
+    //digitalWriteFast(SND_PIN, 0);
+    //return true;
+    m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(1);
+    gpio_set_function(SND_PIN, GPIO_FUNC_PWM);
+    const int audio_pin_slice = pwm_gpio_to_slice_num(SND_PIN);
+    pwm_config config = pwm_get_default_config();
+    pwm_config_set_clkdiv(&config, 1.0f);
+    pwm_config_set_wrap(&config, 255/* + 255 + 255*/);
+    pwm_init(audio_pin_slice, &config, true);
+    return true;
 }
 
 void Sound::update()
 {
-	uint32_t ctrlData = 0;
-	if (rp2040.fifo.pop_nb(&ctrlData))
-	{
-        if (ctrlData == RESET) m_cyclesDone = 0;
-		if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -12, onTimer, this, &m_clockTimer);
-		if (ctrlData & WR_PORT)
-		{
-			uint32_t val = (ctrlData & 0x00FFFFFF), soundBit = (ctrlData & 0x01000000);
-            m_ringBuffer[m_rbWrIndex] = (val / 42) | (soundBit >> 9);
+    uint32_t ctrlData = 0;
+    if (rp2040.fifo.pop_nb(&ctrlData))
+    {
+        if ((ctrlData & 0xFFFFFFFE) == RESET)
+        {
+            if (!(ctrlData & 1))
+            {
+                m_samplesPerLoop = 69888 / 16; m_samplesPerOut = 7;
+            }
+            else
+            {
+                m_samplesPerLoop = 70908 / 19; m_samplesPerOut = 6;
+            }
+            m_cyclesDone = m_prevBit = 0;
+        }
+        if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -32, onTimer, this, &m_clockTimer);
+        if (ctrlData & WR_PORT)
+        {
+//            uint32_t val = (ctrlData & 0x0000FFFF), soundBit = (ctrlData & 0x00010000);
+//            if (val > m_samplesPerLoop) val -= m_samplesPerLoop;
+            m_ringBuffer[m_rbWrIndex] = ctrlData & 0x0000FFFF; //val | soundBit;
             m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
-		}
-	}
+        }
+        if (ctrlData & SET_VOL) m_soundVol = ((ctrlData & 0x0000FFFF) + 1) * 64 - 1;
+    }
 }
 
 bool Sound::onTimer(struct repeating_timer* pTimer)
 {
-	uint32_t soundBit = 0;
-	Sound* pInstance = (Sound*)pTimer->user_data;
-	pInstance->m_cyclesDone++;
-	while (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && (pInstance->m_ringBuffer[pInstance->m_rbRdIndex] & 0x7FFF) <= pInstance->m_cyclesDone)
-	{
-        soundBit = pInstance->m_ringBuffer[pInstance->m_rbRdIndex] >> 15;
-        digitalWriteFast(SND_PIN, soundBit);
-		pInstance->m_rbRdIndex = (++pInstance->m_rbRdIndex) & (SOUND_BUFFER_SIZE - 1);
+    Sound* pInstance = (Sound*)pTimer->user_data;
+    uint16_t samplesBuffer[7], soundBit = pInstance->m_prevBit;
+    int changeBit = 0;
+    pInstance->m_cyclesDone += pInstance->m_samplesPerOut;
+    int i = 0;
+    while (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && (pInstance->m_ringBuffer[pInstance->m_rbRdIndex] & 0x00007FFF) <= pInstance->m_cyclesDone)
+    {
+        soundBit = (pInstance->m_ringBuffer[pInstance->m_rbRdIndex] & 0x00008000) >> 15;
+        changeBit = (pInstance->m_ringBuffer[pInstance->m_rbRdIndex] & 0x00007FFF) - (pInstance->m_cyclesDone - pInstance->m_samplesPerOut);
+        for(; i < changeBit; i++) samplesBuffer[i] = pInstance->m_prevBit;
+        pInstance->m_prevBit = soundBit;
+        pInstance->m_rbRdIndex = (++pInstance->m_rbRdIndex) & (SOUND_BUFFER_SIZE - 1);
     }
-    if (pInstance->m_cyclesDone < LOOPCYCLES / 42) return true;
-    pInstance->m_cyclesDone -= (LOOPCYCLES / 42);
-    rp2040.fifo.push(STOP_FRAME);
-	return false;
+    for (; i < pInstance->m_samplesPerOut; i++) samplesBuffer[i] = pInstance->m_prevBit;
+    uint16_t sample = 0;
+    for (int i = 0; i < pInstance->m_samplesPerOut; i++) sample += (samplesBuffer[i] * pInstance->m_soundVol);
+    pwm_set_gpio_level(SND_PIN, sample / pInstance->m_samplesPerOut);
+    if (pInstance->m_cyclesDone < pInstance->m_samplesPerLoop) return true;
+    pInstance->m_cyclesDone -= (pInstance->m_samplesPerLoop);
+    if (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && (pInstance->m_ringBuffer[pInstance->m_rbRdIndex] & 0x00007FFF) >= pInstance->m_samplesPerLoop)
+        pInstance->m_ringBuffer[pInstance->m_rbRdIndex] -= pInstance->m_samplesPerLoop;
+    rp2040.fifo.push_nb(STOP_FRAME);
+    return false;
 }
+
+//int16_t Sound::m_samplesBuffer[SOUND_BUFFERS][624];
+//uint16_t Sound::m_maxSamplesPerFrame;
+//uint8_t Sound::m_currWrBuffer = 0;
+////uint8_t Sound::m_currRdBuffer;
+//uint16_t Sound::m_currRdBufferPos;
+////bool Sound::m_lastSampleSended;
+//PWMAudio Sound::m_audioDevice;
+//
+//void onRequestSamples()
+//{
+//    if (Sound::m_currRdBuffer == Sound::m_currWrBuffer) return;
+//    while (Sound::m_audioDevice.availableForWrite())
+//    {
+//        if (Sound::m_currRdBufferPos >= Sound::m_maxSamplesPerFrame)
+//        {
+//            Sound::m_currRdBuffer = (++Sound::m_currRdBuffer) & (SOUND_BUFFERS - 1); Sound::m_currRdBufferPos = 0;
+//            Sound::m_lastSampleSended = true;
+// //           rp2040.fifo.push_nb(STOP_FRAME);
+//            break;
+//        }
+////        Sound::m_audioDevice.write(Sound::m_samplesBuffer[Sound::m_currRdBuffer][Sound::m_currRdBufferPos++]);
+//        Sound::m_audioDevice.write(0); Sound::m_currRdBufferPos++;
+//    }
+//}
+//
+//bool Sound::init()
+//{
+////    m_samplesBuffer = (int16_t*)calloc(624, sizeof(int16_t));
+//    m_audioDevice.setPin(SND_PIN);
+//    m_audioDevice.setFrequency(31250);
+//    m_audioDevice.setBuffers(12, 64);
+//    m_audioDevice.begin();
+//    DBG_PRINTLN(rp2040.cpuid());
+//    return true;
+//}
+//
+//void Sound::update()
+//{
+//    uint32_t ctrlData;// = rp2040.fifo.pop();
+//	if (rp2040.fifo.pop_nb(&ctrlData))
+//	{
+//        if ((ctrlData & 0xFFFFFFFE) == RESET) reset(ctrlData & 0x00000001);
+//        if (ctrlData & START_FRAME)
+//        {
+//            m_audioDevice.write((uint8_t*)m_samplesBuffer[(m_currWrBuffer - 1) & (SOUND_BUFFERS - 1)], m_maxSamplesPerFrame * 2);
+//            if (m_overSample)
+//            {
+//                for (; m_currStates < m_nextStates; m_currStates++) // overstates 
+//                {
+//                    m_currSample += m_lastAudioBit;
+//                    if (m_currStates % m_sampleDivider == m_sampleDivider - 1)
+//                    {
+//                        m_samplesBuffer[m_currWrBuffer][m_currStates / m_sampleDivider] =  m_currSample / m_sampleDivider;
+//                        m_currSample = 0;
+//                    }
+//                }
+//                m_lastAudioBit = m_overSample & 0x7FFF;
+//                m_overSample = 0;
+//            }
+//        }
+//		if (ctrlData & WR_PORT)
+//		{
+//            m_nextStates = ctrlData & 0x0000FFFF;
+//            if (m_nextStates >= m_maxSamplesPerFrame * m_sampleDivider)
+//            {
+//                m_nextStates = m_maxSamplesPerFrame * m_sampleDivider;
+//                m_overSample = (ctrlData & 0x00010000 ? 0xFFFF : 0x8000);
+//            }
+//            for (; m_currStates < m_nextStates; m_currStates++)
+//            {
+//                m_currSample += m_lastAudioBit;
+//                if (m_currStates % m_sampleDivider == m_sampleDivider - 1)
+//                {
+//                    m_samplesBuffer[m_currWrBuffer][m_currStates / m_sampleDivider] =  m_currSample / m_sampleDivider;
+//                    m_currSample = 0;
+//                }
+//            }
+//            if (m_overSample) 
+//                m_nextStates = (ctrlData & 0x0000FFFF) - m_maxSamplesPerFrame * m_sampleDivider;
+//            else
+//                m_lastAudioBit = (ctrlData & 0x00010000 ? 32767 : 0);
+//        }
+//        if (ctrlData & STOP_FRAME)
+//        {
+//            for (; m_currStates < m_maxSamplesPerFrame * m_sampleDivider; m_currStates++)
+//            {
+//                m_currSample += m_lastAudioBit;
+//                if (m_currStates % m_sampleDivider == m_sampleDivider - 1)
+//                {
+//                    m_samplesBuffer[m_currWrBuffer][m_currStates / m_sampleDivider] =  m_currSample / m_sampleDivider;
+//                    m_currSample = 0;
+//                }
+//            }
+//            m_currWrBuffer = (++m_currWrBuffer) & (SOUND_BUFFERS - 1);
+//            m_currStates = 0;
+//            m_audioDevice.flush();
+//           rp2040.fifo.push_nb(STOP_FRAME);
+//        }
+//    }
+//}
+//
+//void Sound::reset(bool is128)
+//{
+////    cancel_repeating_timer(&m_clockTimer);
+//    m_audioFreq = (!is128 ? 31250 / 2 : 31112);
+//    m_sampleDivider = (!is128 ? 7 : 6);
+//    m_maxSamplesPerFrame = (!is128 ? 624 : 622);
+//    m_currStates = m_nextStates = m_lastAudioBit = m_currSample = m_currWrBuffer = m_overSample = 0;
+//    for(int i = 0; i < SOUND_BUFFERS; i++) memset(m_samplesBuffer[i], 0, 624 * sizeof(int16_t));
+//    m_audioDevice.setFrequency(m_audioFreq);
+////    m_frameTime = (!is128 ? 19968 : 19992);
+//}
+//
+//bool Sound::onTimer(struct repeating_timer* pTimer)
+//{
+//    rp2040.fifo.push(STOP_FRAME); return false;
+////    //uint32_t soundBit = 0;
+////    //Sound* pInstance = (Sound*)pTimer->user_data;
+////    //pInstance->m_cyclesDone++;
+////    //while (pInstance->m_rbRdIndex != pInstance->m_rbWrIndex && (pInstance->m_ringBuffer[pInstance->m_rbRdIndex] & 0x7FFF) <= pInstance->m_cyclesDone)
+////    //{
+////    //    soundBit = pInstance->m_ringBuffer[pInstance->m_rbRdIndex] >> 15;
+////    //    digitalWriteFast(SND_PIN, soundBit);
+////    //    pInstance->m_rbRdIndex = (++pInstance->m_rbRdIndex) & (SOUND_BUFFER_SIZE - 1);
+////    //}
+////    //if (pInstance->m_cyclesDone < LOOPCYCLES / 42) return true;
+////    //pInstance->m_cyclesDone -= (LOOPCYCLES / 42);
+////    //rp2040.fifo.push(STOP_FRAME);
+////    rp2040.fifo.push(STOP_FRAME);
+////    return false;
+//}
 
 Keyboard::~Keyboard()
 {

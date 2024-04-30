@@ -35,12 +35,12 @@ struct
 void setup()
 {
 //	vreg_set_voltage(VREG_VOLTAGE_1_15);
-	set_sys_clock_khz(250000, true);
+//	set_sys_clock_khz(250000, true);
 #if defined(DBG)
 	Serial.begin(115200);
 	delay(1000);
-//	DBG_PRINTF("Free mem: %d\n", rp2040.getFreeHeap());
 #endif // DBG
+
 	g_mainDisplay.init();
 	delay(100);
 	g_mainKeyboard.init();
@@ -96,9 +96,31 @@ void loop()
 						DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
 						break;
 					case 'd': // For debug purposes
-					case'D':
+					case 'D':
 						DBG_PRINTF("Debug %s\n", (g_zxEmulator.toggleDebug() ? "On" : "Off"));
 						break;
+					//case 'w':
+					//case 'W':
+					//{
+					//	LittleFS.begin();
+					//	SD.begin(SS, SPI_FULL_SPEED);
+					//	File inFile, outFile;
+					//	inFile = LittleFS.open("/soundout.bin", "r");
+					//	outFile = SD.open("/soundout.bin", "w");
+					//	uint8_t data;
+					//	int i;
+					//	for(i = 0;;i++)
+					//	{
+					//		if (inFile.read(&data, 1) == 0) break;
+					//		outFile.write(data);
+					//	}
+					//	DBG_PRINTF("Readed %d bytes, wrote %d bytes to SD\n", i, outFile.size());
+					//	outFile.close();
+					//	inFile.close();
+					//	SD.end();
+					//	LittleFS.end();
+					//	break;
+					//}
 					default:
 						break;
 					}
@@ -165,10 +187,13 @@ void loop()
 		if (!isComputerChanged)
 			g_zxEmulator.restoreState("/state");
 		else
+		{
+			g_zxEmulator.setMachine(g_cardBrowser.getMachinType());
 			g_zxEmulator.resetZ80();
+		}
 		g_zxTape.fileName = g_cardBrowser.getSelectedFile();
 		g_zxEmulator.enableSound(g_cardBrowser.getSoundState());
-		g_zxEmulator.tapeMode(g_cardBrowser.getTapeMode());
+		rp2040.fifo.push(SET_VOL | g_cardBrowser.getSoundVolume());
 		g_mainDisplay.setAddrWindow(0, 0, 319, 239);
 		g_sysMode = systemMode::modeEmulator;
 	}
@@ -176,10 +201,11 @@ void loop()
 
 void setup1()
 {
+//	delay(1000);
 	g_soundBeeper.init();
 }
 
 void loop1()
 {
-	g_soundBeeper.update();
+	if (g_sysMode == modeEmulator) g_soundBeeper.update();
 }

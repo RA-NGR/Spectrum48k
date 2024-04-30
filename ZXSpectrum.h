@@ -3,7 +3,9 @@
 #include "Common.h"
 #include "ZXMacros.h"
 #include "ZXPeripherals.h"
-#include "ROM82.h"
+#include "ROM48.h"
+#include "ROM128-0.h"
+#include "ROM128-1.h"
 
 enum {
 	ADD_HL_RR,
@@ -291,14 +293,15 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) sz53pTable[25
 const uint8_t __attribute__((section(".time_critical." "tables"))) xorConditionTable[8] = { FLAG_Z, 0, FLAG_C, 0, FLAG_P, 0, FLAG_S, 0 };
 const uint8_t __attribute__((section(".time_critical." "tables"))) andConditionTable[8] = { FLAG_Z, FLAG_Z, FLAG_C, FLAG_C, FLAG_P, FLAG_P, FLAG_S, FLAG_S };
 const uint8_t __attribute__((section(".time_critical." "tables"))) rstTable[8] = { 0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38 };
-const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[224] = { 
+const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[228] = { 
 	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
 	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
 	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
 	6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0, 6, 5, 4, 3, 2, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0
 };
 
 class ZXSpectrum
@@ -319,7 +322,7 @@ private:
 		uint8_t r7;
 		pair sp, pc;
 		pair memptr;
-		uint8_t iff1, iff2, im;
+		uint8_t iff2_read, iff1, iff2, im;
 		uint8_t q;
 		uint32_t halted;
 		uint32_t skipINT; // Processor is just after EI or within DD/FD prefixed opcode 
@@ -365,8 +368,10 @@ private:
 	void processTape();
 	bool fetchTapeData();
 // Computer
+	//int m_hRetrace;
 	uint8_t* m_pRAMBanks[8];
 	uint8_t* m_pRAMPages[4];
+	bool m_pageContended[4];
 	union PortFE
 	{
 		struct
@@ -378,10 +383,24 @@ private:
 		};
 		uint8_t rawData;
 	} m_outPortFE;
+	union Port7FFD
+	{
+		struct
+		{
+			uint8_t page : 3;
+			uint8_t screen : 1;
+			uint8_t rom : 1;
+			uint8_t disabled : 1;
+			uint8_t unused : 2;
+		};
+		uint8_t rawData;
+	} m_outPort7FFD;
 	uint8_t m_defaultPortFal = 0xFF;
 	uint8_t* m_pInPorts;
+	void setMachineType(bool is128 = false);
 	void setMemPageAddr(uint32_t page, uint8_t* ptr) { m_pRAMPages[page] = ptr - (page << 14); };
 	inline uint8_t* memoryAddress(uint32_t address) { return address + m_pRAMPages[address >> 14]; };
+	inline uint8_t* screenAddress(uint32_t address) { return address + m_pRAMBanks[5 + ((m_outPort7FFD.screen & !m_outPort7FFD.disabled) << 1)]; };
 	void __attribute__((section(".time_critical." "writeMem"))) writeMem(uint16_t address, uint8_t data);
 	uint8_t __attribute__((section(".time_critical." "readMem"))) readMem(uint16_t address);
 	uint8_t __attribute__((section(".time_critical." "unattachedPort"))) unattachedPort();
@@ -392,6 +411,38 @@ private:
 										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
 	const uint32_t m_colorInvertMask[2] = { 0x00, 0xFF };
 	const uint32_t m_pixelBitMask[4] = { 0x00000000, 0xFFFF0000, 0x0000FFFF, 0xFFFFFFFF };
+	const uint16_t m_pixelsMemOffset[240] = { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+											  0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0100, 0x0200, 0x0300, 0x0400, 0x0500, 0x0600, 0x0700,
+											  0x0020, 0x0120, 0x0220, 0x0320, 0x0420, 0x0520, 0x0620, 0x0720, 0x0040, 0x0140, 0x0240, 0x0340, 0x0440, 0x0540, 0x0640, 0x0740,
+											  0x0060, 0x0160, 0x0260, 0x0360, 0x0460, 0x0560, 0x0660, 0x0760, 0x0080, 0x0180, 0x0280, 0x0380, 0x0480, 0x0580, 0x0680, 0x0780,
+											  0x00A0, 0x01A0, 0x02A0, 0x03A0, 0x04A0, 0x05A0, 0x06A0, 0x07A0, 0x00C0, 0x01C0, 0x02C0, 0x03C0, 0x04C0, 0x05C0, 0x06C0, 0x07C0,
+											  0x00E0, 0x01E0, 0x02E0, 0x03E0, 0x04E0, 0x05E0, 0x06E0, 0x07E0, 0x0800, 0x0900, 0x0A00, 0x0B00, 0x0C00, 0x0D00, 0x0E00, 0x0F00,
+											  0x0820, 0x0920, 0x0A20, 0x0B20, 0x0C20, 0x0D20, 0x0E20, 0x0F20, 0x0840, 0x0940, 0x0A40, 0x0B40, 0x0C40, 0x0D40, 0x0E40, 0x0F40,
+											  0x0860, 0x0960, 0x0A60, 0x0B60, 0x0C60, 0x0D60, 0x0E60, 0x0F60, 0x0880, 0x0980, 0x0A80, 0x0B80, 0x0C80, 0x0D80, 0x0E80, 0x0F80,
+											  0x08A0, 0x09A0, 0x0AA0, 0x0BA0, 0x0CA0, 0x0DA0, 0x0EA0, 0x0FA0, 0x08C0, 0x09C0, 0x0AC0, 0x0BC0, 0x0CC0, 0x0DC0, 0x0EC0, 0x0FC0,
+											  0x08E0, 0x09E0, 0x0AE0, 0x0BE0, 0x0CE0, 0x0DE0, 0x0EE0, 0x0FE0, 0x1000, 0x1100, 0x1200, 0x1300, 0x1400, 0x1500, 0x1600, 0x1700,
+											  0x1020, 0x1120, 0x1220, 0x1320, 0x1420, 0x1520, 0x1620, 0x1720, 0x1040, 0x1140, 0x1240, 0x1340, 0x1440, 0x1540, 0x1640, 0x1740,
+											  0x1060, 0x1160, 0x1260, 0x1360, 0x1460, 0x1560, 0x1660, 0x1760, 0x1080, 0x1180, 0x1280, 0x1380, 0x1480, 0x1580, 0x1680, 0x1780,
+											  0x10A0, 0x11A0, 0x12A0, 0x13A0, 0x14A0, 0x15A0, 0x16A0, 0x17A0, 0x10C0, 0x11C0, 0x12C0, 0x13C0, 0x14C0, 0x15C0, 0x16C0, 0x17C0,
+											  0x10E0, 0x11E0, 0x12E0, 0x13E0, 0x14E0, 0x15E0, 0x16E0, 0x17E0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+											  0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+	};
+	const uint16_t m_attributesMemOffset[240] = { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+												  0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x1800, 0x1800, 0x1800, 0x1800, 0x1800, 0x1800, 0x1800, 0x1800,
+												  0x1820, 0x1820, 0x1820, 0x1820, 0x1820, 0x1820, 0x1820, 0x1820, 0x1840, 0x1840, 0x1840, 0x1840, 0x1840, 0x1840, 0x1840, 0x1840,
+												  0x1860, 0x1860, 0x1860, 0x1860, 0x1860, 0x1860, 0x1860, 0x1860, 0x1880, 0x1880, 0x1880, 0x1880, 0x1880, 0x1880, 0x1880, 0x1880,
+												  0x18A0, 0x18A0, 0x18A0, 0x18A0, 0x18A0, 0x18A0, 0x18A0, 0x18A0, 0x18C0, 0x18C0, 0x18C0, 0x18C0, 0x18C0, 0x18C0, 0x18C0, 0x18C0,
+												  0x18E0, 0x18E0, 0x18E0, 0x18E0, 0x18E0, 0x18E0, 0x18E0, 0x18E0, 0x1900, 0x1900, 0x1900, 0x1900, 0x1900, 0x1900, 0x1900, 0x1900,
+												  0x1920, 0x1920, 0x1920, 0x1920, 0x1920, 0x1920, 0x1920, 0x1920, 0x1940, 0x1940, 0x1940, 0x1940, 0x1940, 0x1940, 0x1940, 0x1940,
+												  0x1960, 0x1960, 0x1960, 0x1960, 0x1960, 0x1960, 0x1960, 0x1960, 0x1980, 0x1980, 0x1980, 0x1980, 0x1980, 0x1980, 0x1980, 0x1980,
+												  0x19A0, 0x19A0, 0x19A0, 0x19A0, 0x19A0, 0x19A0, 0x19A0, 0x19A0, 0x19C0, 0x19C0, 0x19C0, 0x19C0, 0x19C0, 0x19C0, 0x19C0, 0x19C0,
+												  0x19E0, 0x19E0, 0x19E0, 0x19E0, 0x19E0, 0x19E0, 0x19E0, 0x19E0, 0x1A00, 0x1A00, 0x1A00, 0x1A00, 0x1A00, 0x1A00, 0x1A00, 0x1A00,
+												  0x1A20, 0x1A20, 0x1A20, 0x1A20, 0x1A20, 0x1A20, 0x1A20, 0x1A20, 0x1A40, 0x1A40, 0x1A40, 0x1A40, 0x1A40, 0x1A40, 0x1A40, 0x1A40,
+												  0x1A60, 0x1A60, 0x1A60, 0x1A60, 0x1A60, 0x1A60, 0x1A60, 0x1A60, 0x1A80, 0x1A80, 0x1A80, 0x1A80, 0x1A80, 0x1A80, 0x1A80, 0x1A80,
+												  0x1AA0, 0x1AA0, 0x1AA0, 0x1AA0, 0x1AA0, 0x1AA0, 0x1AA0, 0x1AA0, 0x1AC0, 0x1AC0, 0x1AC0, 0x1AC0, 0x1AC0, 0x1AC0, 0x1AC0, 0x1AC0,
+												  0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+												  0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+	};
 	struct BorderColors
 	{
 		uint16_t x;
@@ -400,24 +451,37 @@ private:
 	} m_borderColors[BORDER_BUFFER_SIZE]; // ring buffer of border colors in visible area (1 color per 8 pixels)
 	uint8_t m_pbWIndex = 0; // wr index of border ring buffer
 	uint8_t m_pbRIndex = 0; // rd index of border ring buffer
-	uint32_t m_borderColor = m_colorLookup[7]; // border color out of visible area
+	uint32_t m_borderColor; // border color out of visible area
 	uint8_t m_frameCounter = 0;
 	uint32_t* m_pScreenBuffer[2];
 	int16_t m_scanLine = -1;
 	Display* m_pDisplayInstance;
-	void /*__attribute__((section(".time_critical." "drawLine")))*/ drawLine(int posY);
+	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
 // Misc & Diag
-	union ZXSettings
+	struct ZXSettings
 	{
-		struct
+		int tStatesPerLoop;
+		int tStatesPerLine;
+		int irqLength;
+		int contentionStart;
+		int contentionEnd;
+		int borderStart;
+		int borderEnd;
+		int audioStatesDivider;
+		int frameTime;
+		union 
 		{
-			uint8_t soundEnabled : 1;
-			uint8_t machineType : 1; // 0 - Spectrum 48
-			uint8_t unused : 6;
-		};
-		uint8_t rawData;
-	} m_emulSettings = { 0x01 };
+			struct
+			{
+				uint8_t soundEnabled : 1;
+				uint8_t machineType : 1; // 0 - Spectrum 48
+				uint8_t unused : 6;
+			};
+			uint8_t rawData;
+		} emulSettins;
+	} m_emulSettings;
 	bool m_debugActvie = false;
+	//File m_debugFile;
 	uint32_t m_emulationTime = 0, m_maxEmulTime = 0;
 public:
 // Processor
@@ -426,7 +490,7 @@ public:
 	void startTape(File* pFile, uint16_t sectionSize);
 	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
-	void tapeMode(bool isTurbo = false);
+	//void tapeMode(bool isTurbo = false);
 // Computer
 	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
 // Graphics out
@@ -437,8 +501,9 @@ public:
 // Misc & Diag
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
-	void enableSound(bool isEnable = true) { m_emulSettings.soundEnabled = (isEnable ? 1 : 0); };
+	void enableSound(bool isEnable = true) { m_emulSettings.emulSettins.soundEnabled = (isEnable ? 1 : 0); };
+	void setMachine(uint8_t type) { m_emulSettings.emulSettins.machineType = type & 1; };
 	void storeState(const char* pFileName);
 	void restoreState(const char* pFileName);
-	bool toggleDebug() { m_debugActvie = !m_debugActvie; return m_debugActvie; }
+	bool toggleDebug();// { m_debugActvie = !m_debugActvie; return m_debugActvie; }
 };

@@ -368,10 +368,11 @@ void Browser::getFileList()
 
 void Browser::drawSettingsString()
 {
+	String volStr[4] = { " 25%  ", " 50%  ", " 75%  ", "100%  " };
 	String settingString = "  Звук : ";
-	settingString += (m_soundOn ? "ВКЛ " : "ВЫКЛ");
-	settingString += "                Лента: ";
-	settingString += (m_tapeTurbo ? "2Х  " : "1Х  ");
+	settingString += (m_settingsData.settings.soundOn ? "ВКЛ " : "ВЫКЛ");
+	settingString += "          Громкость: ";
+	settingString += volStr[m_settingsData.settings.soundVol];
 	drawString(settingString, 0, 25, 0xF7BD, 0x1700, false);
 }
 
@@ -379,7 +380,7 @@ void Browser::drawSelectedMachine()
 {
 	drawString("                                        ", 0, 26, 0xF7BD, 0x1700);
 	String machineString = "  Режим: Spectrum ";
-	machineString += "48";
+	machineString += (m_settingsData.settings.machineType == 0 ? "48" : "128");
 	drawString(machineString, 0, 26, 0xF7BD, 0x1700, false);
 }
 
@@ -390,7 +391,7 @@ void Browser::drawFooter()
 	drawSettingsString();
 	drawSelectedMachine();
 	drawString("                                        ", 0, 27, 0xFFFF, 0x1700);
-	drawString("F1-Спр F2-Звук F3-Лента F4-48/128 F5-Вых", 0, 28, 0xE0FF, 0x1700, false);
+	drawString("F1-Спр F2-Звук F3-Громк F4-48/128 F5-Вых", 0, 28, 0xE0FF, 0x1700, false);
 	drawString("                                        ", 0, 29, 0xFFFF, 0x1700);
 }
 
@@ -401,6 +402,7 @@ bool Browser::run()
 		chDir();
 	else
 	{
+		for (int i = 0; i < 21; i++) m_browserWindow[i] = "";
 		m_selectionPos = m_browseFrom = 0;
 		m_browserWindow[12] = "            Нет SD-карты";
 	}
@@ -429,18 +431,19 @@ bool Browser::run()
 		}
 		if (m_pKeyboardInstance->getData(9) == 0x02)
 		{
-			m_soundOn ^= true;
+			m_settingsData.settings.soundOn ^= 1;
 			drawSettingsString();
 			delay(500);
 		}
 		if (m_pKeyboardInstance->getData(9) == 0x04)
 		{
-			m_tapeTurbo ^= true;
+			m_settingsData.settings.soundVol = (++m_settingsData.settings.soundVol) & 0x03;
 			drawSettingsString();
 			delay(500);
 		}
 		if (m_pKeyboardInstance->getData(9) == 0x08)
 		{
+			m_settingsData.settings.machineType ^= 1;
 			drawSelectedMachine();
 			result = true;
 			delay(500);

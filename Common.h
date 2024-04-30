@@ -1,5 +1,7 @@
 #pragma once
 #include <Arduino.h>
+#include "hardware/gpio.h"
+#include "hardware/pwm.h"
 #include <pico/divider.h>
 #include "hardware/dma.h"
 #include "hardware/pio.h"
@@ -12,6 +14,7 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <SDFS.h>
+//#include <PWMAudio.h>
 
 #define DBG
 
@@ -48,14 +51,10 @@
 #define START_FRAME 0x10000000
 #define STOP_FRAME  0x20000000
 #define WR_PORT     0x40000000
-#define RD_PORT     0x80000000
-#define LOOPCYCLES 69888
+#define SET_VOL     0x80000000
 #define SCREENOFFSET 40
-#define STARTSCREEN (8960 - 16)
-#define ENDSCREEN (62720 - 16)
-#define IRQ_LENGTH 32
+
 #define BORDER_BUFFER_SIZE 64
-//#define SOUND_CLOCK 12 /* in us, 12 is enought in most cases */
 #define KBD_CLOCK 1000
 #define SOUND_BUFFER_SIZE 1024
 

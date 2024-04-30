@@ -45,6 +45,10 @@ void setup()
 	delay(100);
 	g_mainKeyboard.init();
 	g_zxEmulator.init(&g_mainDisplay, &g_mainKeyboard);
+	g_cardBrowser.loadSettings();
+	g_zxEmulator.setMachine(g_cardBrowser.getMachinType());
+	g_zxEmulator.enableSound(g_cardBrowser.getSoundState());
+	rp2040.fifo.push(SET_VOL | g_cardBrowser.getSoundVolume());
 	g_zxEmulator.resetZ80();
 }
 

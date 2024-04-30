@@ -506,6 +506,25 @@ bool Browser::run()
 		}
 		yield();
 	}
+	saveSettings();
 	SD.end();
 	return result;
+}
+
+void Browser::saveSettings()
+{
+	LittleFS.begin();
+	File settingsFile = LittleFS.open("/settings", "w");
+	settingsFile.write(&m_settingsData.raw, 1);
+	settingsFile.close();
+	LittleFS.end();
+}
+
+void Browser::loadSettings()
+{
+	LittleFS.begin();
+	File settingsFile = LittleFS.open("/settings", "r");
+	if (settingsFile.read(&m_settingsData.raw, 1) != 1) m_settingsData.raw = 0x07;
+	settingsFile.close();
+	LittleFS.end();
 }

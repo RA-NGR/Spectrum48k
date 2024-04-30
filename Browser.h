@@ -40,5 +40,7 @@ public:
 	bool getSoundState() { return m_settingsData.settings.soundOn; };
 	uint8_t getSoundVolume() { return m_settingsData.settings.soundVol; };
 	bool getMachinType() { return m_settingsData.settings.machineType; };
+	void saveSettings();
+	void loadSettings();
 };
 

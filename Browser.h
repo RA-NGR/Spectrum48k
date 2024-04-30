@@ -23,10 +23,6 @@ class Browser
 		} settings;
 		uint8_t raw;
 	} m_settingsData = { .raw = 0x07 };
-//	bool m_soundOn = true;
-//	uint8_t m_soundVol = 3;
-//	uint8_t m_machineType = 0;
-	uint8_t m_currRom = 0;
 	void drawChar(const uint8_t ch, uint8_t posX, uint16_t foreColor, uint16_t backColor);
 	void listFiles();
 	void dir();

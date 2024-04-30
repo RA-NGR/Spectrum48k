@@ -1,30 +1,6 @@
 #pragma once
 #include "Common.h"
 
-//#define SOUND_BUFFERS 1
-//class Sound
-//{
-//	int16_t m_samplesBuffer[SOUND_BUFFERS][624];
-//	uint8_t m_rawBuffer[4368];
-//	uint16_t m_maxSamplesPerFrame;
-//	uint16_t m_sampleDivider;
-//	int32_t m_audioFreq;
-//	uint32_t m_currStates, m_nextStates;
-//	uint8_t m_currWrBuffer;
-//	int32_t m_currSample;
-//	uint16_t m_lastAudioBit;
-//	PWMAudio m_audioDevice;
-//	uint16_t m_overSample;
-//public:
-//	Sound() {};
-//	~Sound() {};
-//	bool init();
-//	void update();
-//	void waitForFlush() { m_audioDevice.flush(); };
-//private:
-//	void reset(bool is128);
-//};
-
 class Sound
 {
 	alarm_pool_t* m_pAlarmPool = NULL;

@@ -368,7 +368,6 @@ private:
 	void processTape();
 	bool fetchTapeData();
 // Computer
-	//int m_hRetrace;
 	uint8_t* m_pRAMBanks[8];
 	uint8_t* m_pRAMPages[4];
 	bool m_pageContended[4];
@@ -468,7 +467,6 @@ private:
 		int borderStart;
 		int borderEnd;
 		int audioStatesDivider;
-		int frameTime;
 		union 
 		{
 			struct
@@ -490,7 +488,6 @@ public:
 	void startTape(File* pFile, uint16_t sectionSize);
 	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
-	//void tapeMode(bool isTurbo = false);
 // Computer
 	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();
 // Graphics out

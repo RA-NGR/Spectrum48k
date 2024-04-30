@@ -109,7 +109,7 @@ uint8_t Keyboard::readKeys()
 bool Keyboard::onTimer(struct repeating_timer* pTimer)
 {
 	Keyboard* pInstance = (Keyboard*)pTimer->user_data;
-	uint8_t /*tapeBit = pInstance->m_portData[7] | 0xBF,*/ regAddr = 0x14, regFlush = 0xFF;
+	uint8_t regAddr = 0x14, regFlush = 0xFF;
 	if (pInstance->m_portScanIdx > 7)
 	{
 		regAddr = 0x15; regFlush = 0xE0;

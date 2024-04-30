@@ -4,7 +4,7 @@
 #include "Browser.h"
 
 Display g_mainDisplay;
-Sound g_soundBeeper;
+Sound g_mainSpeaker;
 Keyboard g_mainKeyboard;
 ZXSpectrum g_zxEmulator;
 Browser g_cardBrowser(&g_mainDisplay, &g_mainKeyboard);
@@ -205,11 +205,10 @@ void loop()
 
 void setup1()
 {
-//	delay(1000);
-	g_soundBeeper.init();
+	g_mainSpeaker.init();
 }
 
 void loop1()
 {
-	if (g_sysMode == modeEmulator) g_soundBeeper.update();
+	if (g_sysMode == modeEmulator) g_mainSpeaker.update();
 }

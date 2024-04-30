@@ -1347,11 +1347,7 @@ bool ZXSpectrum::fetchTapeData()
 	uint32_t bytesToRead = (m_TAPSection.sectionSize > TAP_BUFFER_SIZE ? TAP_BUFFER_SIZE : m_TAPSection.sectionSize);
 	size_t readed = 0;
 	if (!bytesToRead) return false;
-	if ((readed = m_TAPSection.pFile->readBytes((char*)m_TAPSection.dataBuffer, bytesToRead)) != bytesToRead)
-	{
-		//		DBG_PRINTF("Error reading block, readed %d of %d, file pos %d\n", readed, bytesToRead, m_pActiveFile->position());
-		return false;
-	}
+	if ((readed = m_TAPSection.pFile->readBytes((char*)m_TAPSection.dataBuffer, bytesToRead)) != bytesToRead) return false;
 	m_TAPSection.sectionSize -= bytesToRead;
 	m_TAPSection.dataSize = bytesToRead;
 	m_TAPSection.bit = 0;
@@ -1370,7 +1366,7 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 	m_tapeBit = 0;
 }
 
-void ZXSpectrum::setMachineType(bool is128)
+ void ZXSpectrum::setMachineType(bool is128)
 {
 	m_emulSettings.tStatesPerLoop = (!is128 ? 69888 : 70908);
 	m_emulSettings.tStatesPerLine = (!is128 ? 224 : 228);
@@ -1380,7 +1376,6 @@ void ZXSpectrum::setMachineType(bool is128)
 	m_emulSettings.borderStart = (!is128 ? 14336 - 16 - 24 * m_emulSettings.tStatesPerLine : 14362 - 16 - 24 * m_emulSettings.tStatesPerLine);
 	m_emulSettings.borderEnd = m_emulSettings.borderStart + 240 * m_emulSettings.tStatesPerLine;
 	m_emulSettings.audioStatesDivider = (!is128 ? 16 : 19);
-	m_emulSettings.frameTime = (!is128 ? 19968 : 19992);
 	if (!is128)
 		setMemPageAddr(0, (uint8_t*)zx48ROM);
 	else
@@ -1468,23 +1463,8 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 		}
 		if (m_outPortFE.soundOut != ((data >> 4) & 1))
 		{
-			//if (m_emulSettings.emulSettins.soundEnabled && m_outPortFE.soundOut != ((data >> 4) & 1)) 
-			//	rp2040.fifo.push_nb(m_Z80Processor.tCount & 0x00FFFFFF | WR_PORT | (data & 0x10) << 20);
 			if (m_emulSettings.emulSettins.soundEnabled) 
 				rp2040.fifo.push_nb((m_Z80Processor.tCount / m_emulSettings.audioStatesDivider) & 0x00007FFF | WR_PORT | (data & 0x10) << 11);
-			//if (!m_ZXTape.isTapeActive && m_debugActvie)
-			//{
-			//	int16_t soundData = (m_Z80Processor.tCount >> 4) | (data & 0x10) << 11;
-			//	if (m_debugFile.size() < 900000)
-			//	{
-			//		m_debugFile.write((uint8_t*)&soundData, sizeof(uint16_t));
-			//	}
-			//	else
-			//	{
-			//		DBG_PRINTF("Wrote %d bytes\n", m_debugFile.size());
-			//		m_debugFile.close(); m_debugActvie = false;
-			//	}
-			//}
 		}
 		m_outPortFE.rawData = data;
 #ifdef ISSUE_2

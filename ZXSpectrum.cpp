@@ -1315,6 +1315,7 @@ void ZXSpectrum::resetZ80()
 	AF = AF_ = 0xffff;
 	SP = 0xffff;
 	m_maxEmulTime = 0;
+	m_dummyAYRegs[m_outPortFFFD & 0x0F] = { 0 }; m_dummyAYRegs[7] = 0xFD; m_dummyAYRegs[14] = 0xFF;
 	rp2040.fifo.push(RESET | m_emulSettings.emulSettins.machineType);
 }
 // Tape 
@@ -1324,15 +1325,14 @@ void ZXSpectrum::processTape()
 	m_ZXTape.statesCount--;
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles + m_ZXTape.stateCycles; // restore state cycles
 	if (m_ZXTape.statesCount > 0) return;
-	if (m_ZXTape.tapeState > 1 && m_ZXTape.tapeState < 4)
-		m_ZXTape.tapeState++; // Next state (PILOT->SYNCRO HIGH->SYNCRO LOW)
+	if (m_ZXTape.tapeState > 1 && m_ZXTape.tapeState < 4) m_ZXTape.tapeState++; // Next state (PILOT->SYNCRO HIGH->SYNCRO LOW)
 	else
 	{
 		if (!m_TAPSection.isLastBit)
 		{
 			m_ZXTape.tapeState = (m_TAPSection.dataBuffer[m_TAPSection.bit >> 3] & (1 << (7 - (m_TAPSection.bit & 7)))) ? 1 : 0;
-			m_TAPSection.bit++;
-			if (m_TAPSection.bit == (m_TAPSection.dataSize << 3))
+			m_TAPSection.bit++; 
+			if (m_TAPSection.bit >= (m_TAPSection.dataSize << 3))
 				if (!fetchTapeData()) m_TAPSection.isLastBit = true;
 		}
 		else
@@ -1447,7 +1447,7 @@ uint8_t ZXSpectrum::unattachedPort()
 void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 {
 	contendedAccess(port, 1);
-	if (!(port & 0x0001))
+	if (!(port & 0x0001)) // ULA orts
 	{
 		if (m_outPortFE.borderColor != (data & 7))
 		{
@@ -1467,27 +1467,35 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 				rp2040.fifo.push_nb((m_Z80Processor.tCount / m_emulSettings.audioStatesDivider) & 0x00007FFF | WR_PORT | (data & 0x10) << 11);
 		}
 		m_outPortFE.rawData = data;
-#ifdef ISSUE_2
-		m_defaultPortFal = (data & 0x18 ? 0xFF : 0xBF); // issue 2
-#else
-		m_defaultPortFal = (data & 0x10 ? 0xFF : 0xBF); // issue 3
-#endif // ISSUE_2
-	}
-	if (m_emulSettings.emulSettins.machineType && (port & 0x8002) == 0)
-	{
-		if (!m_outPort7FFD.disabled)
-		{
-			m_outPort7FFD.rawData = data;
-			setMemPageAddr(0, (uint8_t*)(m_outPort7FFD.rom ? zx128ROM1 : zx128ROM0));
-			setMemPageAddr(3, m_pRAMBanks[m_outPort7FFD.page]); m_pageContended[3] = m_outPort7FFD.page & 1 ? true : false;
-		}
-	}
-	if (!(port & 0x0001))
-	{
+//#ifdef ISSUE_2
+//		m_defaultPortFal = (data & 0x18 ? 0xFF : 0xBF); // issue 2
+//#else
+		m_defaultPortFal = (data & 0x10 ? 0xFF : 0xBF); // issue 3 only
+//#endif // ISSUE_2
 		contendedAccess(CONTENDED, 2);
 	}
 	else
 	{
+		if (m_emulSettings.emulSettins.machineType)
+		{
+			if ((port & 0x8002) == 0) // 128K memory port
+			{
+				if (!m_outPort7FFD.disabled)
+				{
+					m_outPort7FFD.rawData = data;
+					setMemPageAddr(0, (uint8_t*)(m_outPort7FFD.rom ? zx128ROM1 : zx128ROM0));
+					setMemPageAddr(3, m_pRAMBanks[m_outPort7FFD.page]); m_pageContended[3] = m_outPort7FFD.page & 1 ? true : false;
+				}
+			}
+			if ((port & 0xC002) == 0xC000) // AY port
+			{
+				m_outPortFFFD = data;
+			}
+			if ((port & 0xC002) == 0x8000) // AY port
+			{
+				m_dummyAYRegs[m_outPortFFFD & 0x0F] = data;
+			}
+		}
 		if (m_pageContended[port >> 14])
 		{
 			contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 0);
@@ -1495,6 +1503,19 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 		else
 			m_Z80Processor.tCount += 2;
 	}
+	//if (!(port & 0x0001))
+	//{
+	//	contendedAccess(CONTENDED, 2);
+	//}
+	//else
+	//{
+	//	if (m_pageContended[port >> 14])
+	//	{
+	//		contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 0);
+	//	}
+	//	else
+	//		m_Z80Processor.tCount += 2;
+	//}
 	m_Z80Processor.tCount++;
 }
 
@@ -1504,11 +1525,11 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 	uint32_t periphData = 0x0000001F, timeOut = 0;
 
 	contendedAccess(port, 1);
-	if (!(port & 0x0001))
+	if (!(port & 0x0001)) // ULA ports
 	{
 		contendedAccess(CONTENDED, 2);
-		for (int i = 0; i < 8; i++) if (!((port >> (i + 8)) & 0x01)) retVal &= m_pInPorts[i];
-		if (m_tapeBit) retVal ^= 0x40;
+		for (int i = 0; i < 8; i++) if (!((port >> (i + 8)) & 0x01)) retVal &= (m_pInPorts[i] & 0xBF);
+		retVal |= (m_tapeBit << 6);
 	}
 	else
 	{
@@ -1521,9 +1542,12 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 			m_Z80Processor.tCount += 2;
 			retVal = unattachedPort();
 		}
-
+		if (m_emulSettings.emulSettins.machineType && (port & 0xC002) == 0xC000) // AY port
+		{
+			retVal = m_dummyAYRegs[m_outPortFFFD & 0x0F];
+		}
+		if ((port & 0x00E0) == 0x00) retVal = m_pInPorts[8]; // Joystic port
 	}
-	if ((port & 0x00E0) == 0x00)/*if ((port & 0x00FF) <= 0x1F)*/ retVal = m_pInPorts[8];
 	m_Z80Processor.tCount++;
 	return retVal;
 }

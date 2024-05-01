@@ -3,6 +3,11 @@
 
 class Sound
 {
+	union
+	{
+		uint8_t r8[16];
+		uint16_t r16[8];
+	} m_regsAY;
 	alarm_pool_t* m_pAlarmPool = NULL;
 	struct repeating_timer m_clockTimer;
 	int m_cyclesDone = 0;
@@ -10,6 +15,7 @@ class Sound
 	uint16_t m_soundVol = 255;
 	uint8_t m_samplesPerOut;
 	uint8_t m_prevBit;
+	bool m_enableAY;
 	uint16_t m_ringBuffer[SOUND_BUFFER_SIZE];
 	uint16_t m_rbWrIndex = 0;
 	uint16_t m_rbRdIndex = 0;

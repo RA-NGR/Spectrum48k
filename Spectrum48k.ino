@@ -101,7 +101,7 @@ void loop()
 						break;
 					case 'd': // For debug purposes
 					case 'D':
-						DBG_PRINTF("Debug %s\n", (g_zxEmulator.toggleDebug() ? "On" : "Off"));
+						//DBG_PRINTF("Debug %s\n", (g_zxEmulator.toggleDebug() ? "On" : "Off"));
 						break;
 					//case 'w':
 					//case 'W':

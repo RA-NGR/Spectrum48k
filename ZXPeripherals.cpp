@@ -25,21 +25,29 @@ void Sound::update()
     {
         if ((ctrlData & 0xFFFFFFFE) == RESET)
         {
-            if (!(ctrlData & 1))
-            {
-                m_samplesPerLoop = 69888 / 16; m_samplesPerOut = 7;
-            }
-            else
-            {
-                m_samplesPerLoop = 70908 / 19; m_samplesPerOut = 6;
-            }
+            m_samplesPerLoop = 4368 - 636 * (ctrlData & 1); m_samplesPerOut = 7 - (ctrlData & 1); m_enableAY = (ctrlData & 1);
+            //if (!(ctrlData & 1))
+            //{
+            //    m_samplesPerLoop = 69888 / 16; m_samplesPerOut = 7; m_enableAY = false;
+            //}
+            //else
+            //{
+            //    m_samplesPerLoop = 70908 / 19; m_samplesPerOut = 6; m_enableAY = true;
+            //}
             m_cyclesDone = m_prevBit = 0;
+            m_regsAY = { 0 }; m_regsAY.r8[7] = 0xFD; m_regsAY.r8[14] = 0xFF;
         }
         if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -32, onTimer, this, &m_clockTimer);
         if (ctrlData & WR_PORT)
         {
-            m_ringBuffer[m_rbWrIndex] = ctrlData & 0x0000FFFF;
-            m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
+            if (ctrlData & AY_PORT)
+            {
+
+            }
+            else
+            {
+                m_ringBuffer[m_rbWrIndex] = ctrlData & 0x0000FFFF; m_rbWrIndex = (++m_rbWrIndex) & (SOUND_BUFFER_SIZE - 1);
+            }
         }
         if (ctrlData & SET_VOL) m_soundVol = ((ctrlData & 0x0000FFFF) + 1) * 64 - 1;
     }

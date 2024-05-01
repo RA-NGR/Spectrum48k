@@ -51,13 +51,14 @@
 #define STOP_FRAME  0x20000000
 #define WR_PORT     0x40000000
 #define SET_VOL     0x80000000
+#define AY_PORT		0x00010000
 #define SCREENOFFSET 40
 
 #define BORDER_BUFFER_SIZE 64
 #define KBD_CLOCK 1000
 #define SOUND_BUFFER_SIZE 1024
 
-#define TAP_BUFFER_SIZE 16384
+#define TAP_BUFFER_SIZE 24567
 
 #ifdef DBG
 #define DBG_PRINT(a) Serial.print(a)

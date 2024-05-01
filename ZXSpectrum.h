@@ -394,6 +394,8 @@ private:
 		};
 		uint8_t rawData;
 	} m_outPort7FFD;
+	uint8_t m_outPortFFFD;
+	uint8_t m_dummyAYRegs[16];
 	uint8_t m_defaultPortFal = 0xFF;
 	uint8_t* m_pInPorts;
 	void setMachineType(bool is128 = false);
@@ -486,7 +488,7 @@ public:
 	void resetZ80();
 // Tape
 	void startTape(File* pFile, uint16_t sectionSize);
-	void stopTape() { m_ZXTape.isTapeActive = false; m_tapeBit = 0; };
+	void stopTape() { m_ZXTape.isTapeActive = false; };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
 // Computer
 	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();

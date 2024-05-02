@@ -489,7 +489,7 @@ public:
 	void resetZ80();
 // Tape
 	void startTape(File* pFile, uint16_t sectionSize);
-	void stopTape() { m_ZXTape.isTapeActive = false; };
+	void stopTape() { m_ZXTape.isTapeActive = false; gpio_put(LED_BUILTIN, 0); };
 	bool tapeActive() { return m_ZXTape.isTapeActive; };
 // Computer
 	void __attribute__((section(".time_critical." "loopZ80"))) loopZ80();

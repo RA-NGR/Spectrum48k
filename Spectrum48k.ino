@@ -40,7 +40,6 @@ void setup()
 	Serial.begin(115200);
 	delay(1000);
 #endif // DBG
-
 	g_mainDisplay.init();
 	delay(100);
 	g_mainKeyboard.init();

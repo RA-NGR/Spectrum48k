@@ -1364,6 +1364,7 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 	m_ZXTape.stateCycles = m_tapeStates[m_ZXTape.tapeState].stateCycles;
 	m_ZXTape.statesCount = m_tapeStates[m_ZXTape.tapeState].statesCount;
 	m_tapeBit = 0;
+	gpio_put(LED_BUILTIN, 1);
 }
 
  void ZXSpectrum::setMachineType(bool is128)
@@ -1659,7 +1660,10 @@ void ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 			DBG_PRINTLN("Error allocating RAM banks"); return;
 		}
 	}
-	m_pInPorts = pKeyboardInstance->getBuffer();
+	m_pInPorts = pKeyboardInstance->getBuffer(); 
+	gpio_init(LED_BUILTIN);
+	gpio_set_dir(LED_BUILTIN, true);
+
 }
 // Misc & Diag
 void ZXSpectrum::storeState(const char* pFileName)

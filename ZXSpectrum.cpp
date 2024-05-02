@@ -1315,9 +1315,9 @@ void ZXSpectrum::resetZ80()
 	AF = AF_ = 0xffff;
 	SP = 0xffff;
 	m_maxEmulTime = 0;
-	m_dummyAYRegs[m_outPortFFFD & 0x0F] = { 0 }; m_dummyAYRegs[7] = 0xFD; m_dummyAYRegs[14] = 0xFF;
+	m_virtualRegsAY[m_outPortFFFD & 0x0F] = { 0 }; m_virtualRegsAY[7] = 0xFD; m_virtualRegsAY[14] = 0xFF;
 	rp2040.fifo.push(RESET | m_emulSettings.emulSettins.machineType);
-}
+} 
 // Tape 
 void ZXSpectrum::processTape()
 {
@@ -1344,7 +1344,7 @@ void ZXSpectrum::processTape()
 
 bool ZXSpectrum::fetchTapeData()
 {
-	uint32_t bytesToRead = (m_TAPSection.sectionSize > TAP_BUFFER_SIZE ? TAP_BUFFER_SIZE : m_TAPSection.sectionSize);
+	uint32_t bytesToRead = (m_TAPSection.sectionSize > m_bufferSize ? m_bufferSize : m_TAPSection.sectionSize);
 	size_t readed = 0;
 	if (!bytesToRead) return false;
 	if ((readed = m_TAPSection.pFile->readBytes((char*)m_TAPSection.dataBuffer, bytesToRead)) != bytesToRead) return false;
@@ -1384,6 +1384,7 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 	setMemPageAddr(1, m_pRAMBanks[5]); m_pageContended[1] = true;
 	setMemPageAddr(2, m_pRAMBanks[2]); m_pageContended[2] = false;
 	setMemPageAddr(3, m_pRAMBanks[0]); m_pageContended[3] = false;
+	m_bufferSize = (!is128 ? 16384 : 24567); // Fu****g magic
 }
 
 void ZXSpectrum::writeMem(uint16_t address, uint8_t data)
@@ -1489,11 +1490,11 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 			}
 			if ((port & 0xC002) == 0xC000) // AY port
 			{
-				m_outPortFFFD = data;
+				m_outPortFFFD = data; rp2040.fifo.push_nb(WR_PORT | AY_PORT | data);
 			}
 			if ((port & 0xC002) == 0x8000) // AY port
 			{
-				m_dummyAYRegs[m_outPortFFFD & 0x0F] = data;
+				m_virtualRegsAY[m_outPortFFFD & 0x0F] = data; rp2040.fifo.push_nb(WR_PORT | AY_PORT | AY_DATA | data);
 			}
 		}
 		if (m_pageContended[port >> 14])
@@ -1544,7 +1545,7 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 		}
 		if (m_emulSettings.emulSettins.machineType && (port & 0xC002) == 0xC000) // AY port
 		{
-			retVal = m_dummyAYRegs[m_outPortFFFD & 0x0F];
+			retVal = m_virtualRegsAY[m_outPortFFFD & 0x0F];
 		}
 		if ((port & 0x00E0) == 0x00) retVal = m_pInPorts[8]; // Joystic port
 	}

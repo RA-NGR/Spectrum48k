@@ -365,6 +365,7 @@ private:
 		bool isLastBit;
 	} m_TAPSection;
 	uint8_t m_tapeBit = 0;
+	uint16_t m_bufferSize;
 	void processTape();
 	bool fetchTapeData();
 // Computer
@@ -395,7 +396,7 @@ private:
 		uint8_t rawData;
 	} m_outPort7FFD;
 	uint8_t m_outPortFFFD;
-	uint8_t m_dummyAYRegs[16];
+	uint8_t m_virtualRegsAY[16];
 	uint8_t m_defaultPortFal = 0xFF;
 	uint8_t* m_pInPorts;
 	void setMachineType(bool is128 = false);

@@ -52,6 +52,7 @@
 #define WR_PORT     0x40000000
 #define SET_VOL     0x80000000
 #define AY_PORT		0x00010000
+#define AY_DATA		0x00000100
 #define SCREENOFFSET 40
 
 #define BORDER_BUFFER_SIZE 64

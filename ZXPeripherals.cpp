@@ -34,15 +34,18 @@ void Sound::update()
             //{
             //    m_samplesPerLoop = 70908 / 19; m_samplesPerOut = 6; m_enableAY = true;
             //}
-            m_cyclesDone = m_prevBit = 0;
-            m_regsAY = { 0 }; m_regsAY.r8[7] = 0xFD; m_regsAY.r8[14] = 0xFF;
+            m_cyclesDone = m_prevBit = 0; m_regsAY = { 0 }; m_regsAY.r8[7] = 0xFD; m_regsAY.r8[14] = 0xFF;
+            m_selectedRegAY = 0;
         }
         if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -32, onTimer, this, &m_clockTimer);
         if (ctrlData & WR_PORT)
         {
             if (ctrlData & AY_PORT)
             {
-
+                if (ctrlData & AY_DATA)
+                    m_regsAY.r8[m_selectedRegAY] = ctrlData & 0x000000FF;
+                else
+                    m_selectedRegAY = ctrlData & 0x0000000F;
             }
             else
             {

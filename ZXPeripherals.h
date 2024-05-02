@@ -8,6 +8,7 @@ class Sound
 		uint8_t r8[16];
 		uint16_t r16[8];
 	} m_regsAY;
+	uint8_t m_selectedRegAY;
 	alarm_pool_t* m_pAlarmPool = NULL;
 	struct repeating_timer m_clockTimer;
 	int m_cyclesDone = 0;

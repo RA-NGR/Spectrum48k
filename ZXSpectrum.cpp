@@ -1371,7 +1371,7 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 	m_emulSettings.tStatesPerLoop = (!is128 ? 69888 : 70908);
 	m_emulSettings.tStatesPerLine = (!is128 ? 224 : 228);
 	m_emulSettings.irqLength = (!is128 ? 32 : 36);
-	m_emulSettings.contentionStart = (!is128 ? 14335 : 14361);
+	m_emulSettings.contentionStart = (!is128 ? 14335 : 14361 + 1);
 	m_emulSettings.contentionEnd = m_emulSettings.contentionStart + 191 * m_emulSettings.tStatesPerLine + 128 - 2 - 1;
 	m_emulSettings.borderStart = (!is128 ? 14336 - 16 - 24 * m_emulSettings.tStatesPerLine : 14362 - 16 - 24 * m_emulSettings.tStatesPerLine);
 	m_emulSettings.borderEnd = m_emulSettings.borderStart + 240 * m_emulSettings.tStatesPerLine;
@@ -1448,7 +1448,7 @@ uint8_t ZXSpectrum::unattachedPort()
 void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 {
 	contendedAccess(port, 1);
-	if (!(port & 0x0001)) // ULA orts
+	if (!(port & 0x0001)) // ULA ports
 	{
 		if (m_outPortFE.borderColor != (data & 7))
 		{
@@ -1504,19 +1504,6 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 		else
 			m_Z80Processor.tCount += 2;
 	}
-	//if (!(port & 0x0001))
-	//{
-	//	contendedAccess(CONTENDED, 2);
-	//}
-	//else
-	//{
-	//	if (m_pageContended[port >> 14])
-	//	{
-	//		contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 0);
-	//	}
-	//	else
-	//		m_Z80Processor.tCount += 2;
-	//}
 	m_Z80Processor.tCount++;
 }
 

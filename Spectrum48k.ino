@@ -45,8 +45,7 @@ void setup()
 	g_mainKeyboard.init();
 	g_zxEmulator.init(&g_mainDisplay, &g_mainKeyboard);
 	g_cardBrowser.loadSettings();
-	g_zxEmulator.setMachine(g_cardBrowser.getMachinType());
-	g_zxEmulator.enableSound(g_cardBrowser.getSoundState());
+	g_zxEmulator.setMachine(g_cardBrowser.getMachineType());
 	rp2040.fifo.push(SET_VOL | g_cardBrowser.getSoundVolume());
 	g_zxEmulator.resetZ80();
 }
@@ -191,11 +190,10 @@ void loop()
 			g_zxEmulator.restoreState("/state");
 		else
 		{
-			g_zxEmulator.setMachine(g_cardBrowser.getMachinType());
+			g_zxEmulator.setMachine(g_cardBrowser.getMachineType());
 			g_zxEmulator.resetZ80();
 		}
 		g_zxTape.fileName = g_cardBrowser.getSelectedFile();
-		g_zxEmulator.enableSound(g_cardBrowser.getSoundState());
 		rp2040.fifo.push(SET_VOL | g_cardBrowser.getSoundVolume());
 		g_mainDisplay.setAddrWindow(0, 0, 319, 239);
 		g_sysMode = systemMode::modeEmulator;

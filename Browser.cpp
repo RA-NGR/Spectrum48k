@@ -262,6 +262,7 @@ void Browser::drawString(const String textStr, uint8_t posX, uint8_t posY, uint1
 			//		ch = textStr[idx++] + 0x27;
 			//	else
 			//		ch = textStr[idx++] + (0x30 + 0x40 * (ch & 0x01));
+			//if ((ch & 0x80) != 0x00 && (ch & 0xE0) == 0xC0) ch = ((ch & 0x1F) << 1) | (textStr[idx++] & 0x3F);
 			switch (ch)
 			{
 			case 0xD0:
@@ -269,14 +270,14 @@ void Browser::drawString(const String textStr, uint8_t posX, uint8_t posY, uint1
 				if (ch == 0x81)
 					ch = 0xA8;
 				else
-					if (ch >= 0x90 && ch <= 0xBF) ch = ch + 0x30;
+					if (ch >= 0x90 && ch <= 0xBF) ch += 0x30;
 				break;
 			case 0xD1:
 				ch = textStr[idx++];
 				if (ch == 0x91)
 					ch = 0xB8;
 				else
-					if (ch >= 0x80 && ch <= 0x8F) ch = ch + 0x70;
+					if (ch >= 0x80 && ch <= 0x8F) ch += 0x70;
 				break;
 			default:
 				break;
@@ -296,7 +297,7 @@ void Browser::drawString(const String textStr, uint8_t posX, uint8_t posY, uint1
 void Browser::listFiles()
 {
 	drawString("                                        ", 0, 0, 0xFFFF, 0x1700);
-	for (int i = 0; i < 21; i++)
+	for (int i = 0; i < 22; i++)
 	{
 		String outStr = " ";
 		outStr += m_browserWindow[i];
@@ -317,7 +318,7 @@ void Browser::listFiles()
 			backColor = 0xFF07; foreColor = 0x0000;
 		}
 		drawString(outStr, 1, i + 1, foreColor, backColor, false);
-		drawString("                                        ", 0, 22, 0xFFFF, 0x1700);
+		drawString("                                        ", 0, 23, 0xFFFF, 0x1700);
 	}
 }
 
@@ -331,12 +332,12 @@ void Browser::chDir()
 void Browser::dir()
 {
 	int i, posInList = 0;
-	for (i = 0; i < 21; i++) m_browserWindow[i] = "";
+	for (i = 0; i < 22; i++) m_browserWindow[i] = "";
 	for (i = 0; i < m_browseFrom - 1; i++)
 	{
 		posInList = m_fileList.indexOf("\n", posInList) + 1;
 	}
-	for (i = 0; i < 21; i++)
+	for (i = 0; i < 22; i++)
 	{
 		if (m_fileList[posInList] == '\n' || posInList >= m_fileList.length()) break;
 		int endOfStr = m_fileList.indexOf("\n", posInList);
@@ -368,30 +369,22 @@ void Browser::getFileList()
 
 void Browser::drawSettingsString()
 {
-	String volStr[4] = { " 25%  ", " 50%  ", " 75%  ", "100%  " };
-	String settingString = "  Звук : ";
-	settingString += (m_settingsData.settings.soundOn ? "ВКЛ " : "ВЫКЛ");
-	settingString += "          Громкость: ";
+	String volStr[5] = { "ВЫКЛ  ", " 25%  ", " 50%  ", " 75%  ", "100%  " };
+	String settingString = "  Громкость: ";
 	settingString += volStr[m_settingsData.settings.soundVol];
+	settingString += " Режим: Spectrum ";
+	settingString += (m_settingsData.settings.machineType == 0 ? "48  " : "128  ");
 	drawString(settingString, 0, 25, 0xF7BD, 0x1700, false);
-}
-
-void Browser::drawSelectedMachine() 
-{
-	drawString("                                        ", 0, 26, 0xF7BD, 0x1700);
-	String machineString = "  Режим: Spectrum ";
-	machineString += (m_settingsData.settings.machineType == 0 ? "48" : "128");
-	drawString(machineString, 0, 26, 0xF7BD, 0x1700, false);
 }
 
 void Browser::drawFooter()
 {
-	drawString("----------------------------------------", 0, 23, 0xF7BD, 0x1700);
-	drawString("                                        ", 0, 24, 0xFFFF, 0x1700);
+	drawString("----------------------------------------", 0, 24, 0xF7BD, 0x1700);
+//	drawString("                                        ", 0, 24, 0xFFFF, 0x1700);
 	drawSettingsString();
-	drawSelectedMachine();
+	drawString("----------------------------------------", 0, 26, 0xF7BD, 0x1700);
 	drawString("                                        ", 0, 27, 0xFFFF, 0x1700);
-	drawString("F1-Спр F2-Звук F3-Громк F4-48/128 F5-Вых", 0, 28, 0xE0FF, 0x1700, false);
+	drawString("  F1-Спр  F2-Громк  F3-48К/128К  F5-Вых ", 0, 28, 0xE0FF, 0x1700, false);
 	drawString("                                        ", 0, 29, 0xFFFF, 0x1700);
 }
 
@@ -402,7 +395,7 @@ bool Browser::run()
 		chDir();
 	else
 	{
-		for (int i = 0; i < 21; i++) m_browserWindow[i] = "";
+		for (int i = 0; i < 22; i++) m_browserWindow[i] = "";
 		m_selectionPos = m_browseFrom = 0;
 		m_browserWindow[12] = "            Нет SD-карты";
 	}
@@ -431,20 +424,14 @@ bool Browser::run()
 		}
 		if (m_pKeyboardInstance->getData(9) == 0x02)
 		{
-			m_settingsData.settings.soundOn ^= 1;
+			m_settingsData.settings.soundVol = (++m_settingsData.settings.soundVol) % 5;
 			drawSettingsString();
 			delay(500);
 		}
 		if (m_pKeyboardInstance->getData(9) == 0x04)
 		{
-			m_settingsData.settings.soundVol = (++m_settingsData.settings.soundVol) & 0x03;
-			drawSettingsString();
-			delay(500);
-		}
-		if (m_pKeyboardInstance->getData(9) == 0x08)
-		{
 			m_settingsData.settings.machineType ^= 1;
-			drawSelectedMachine();
+			drawSettingsString();
 			result = true;
 			delay(500);
 		}
@@ -452,10 +439,10 @@ bool Browser::run()
 		if (m_pKeyboardInstance->getData(8) == 0x04 && m_selectionPos != 0)
 		{
 			m_selectionPos++;
-			if (m_selectionPos > 21 || m_browserWindow[m_selectionPos - 1] == "")
+			if (m_selectionPos > 22 || m_browserWindow[m_selectionPos - 1] == "")
 			{
 				m_selectionPos--;
-				if (m_browseFrom + 20 < m_filesCount)
+				if (m_browseFrom + 21 < m_filesCount)
 				{
 					m_browseFrom++; dir(); delay(150);
 				}
@@ -522,9 +509,13 @@ void Browser::saveSettings()
 
 void Browser::loadSettings()
 {
+	m_settingsData.raw = 0x04;
 	LittleFS.begin();
 	File settingsFile = LittleFS.open("/settings", "r");
-	if (settingsFile.read(&m_settingsData.raw, 1) != 1) m_settingsData.raw = 0x07;
-	settingsFile.close();
+	if (settingsFile)
+	{
+		settingsFile.read(&m_settingsData.raw, 1);
+		settingsFile.close();
+	}
 	LittleFS.end();
 }

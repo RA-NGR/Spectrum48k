@@ -41,8 +41,6 @@
 //#define TFT_REFRESHRATE 0x1E /* 63 Hz	 */
 //#define TFT_REFRESHRATE 0x1F /* 61 Hz	 */
 
-//#define ISSUE_2
-// if ISSUE_2 is undefinded, emulator will use Issue 3
 
 #define DMA_BUFF_SIZE 30
 
@@ -51,13 +49,14 @@
 #define STOP_FRAME  0x20000000
 #define WR_PORT     0x40000000
 #define SET_VOL     0x80000000
-#define AY_PORT		0x00010000
-#define AY_DATA		0x00000100
+#define AY_PORT		0x08000000
+#define AY_DATA		0x04000000
 #define SCREENOFFSET 40
 
 #define BORDER_BUFFER_SIZE 64
 #define KBD_CLOCK 1000
-#define SOUND_BUFFER_SIZE 1024
+#define BEEPER_BUFFER_SIZE 1024
+#define AY_BUFFER_SIZE 512
 
 #define TAP_BUFFER_SIZE 24567
 

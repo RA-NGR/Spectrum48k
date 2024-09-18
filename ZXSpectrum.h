@@ -6,6 +6,7 @@
 #include "ROM48.h"
 #include "ROM128-0.h"
 #include "ROM128-1.h"
+#include "RingBuffer.h"
 
 enum {
 	ADD_HL_RR,
@@ -397,7 +398,7 @@ private:
 	} m_outPort7FFD;
 	uint8_t m_outPortFFFD;
 	uint8_t m_virtualRegsAY[16];
-	uint8_t m_defaultPortFal = 0xFF;
+	uint8_t m_defaultPortVal = 0xFF;
 	uint8_t* m_pInPorts;
 	void setMachineType(bool is128 = false);
 	void setMemPageAddr(uint32_t page, uint8_t* ptr) { m_pRAMPages[page] = ptr - (page << 14); };
@@ -445,12 +446,19 @@ private:
 												  0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 												  0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 	};
+//	struct BorderColors
+	//{
+	//	uint16_t x;
+	//	uint8_t y;
+	//	uint32_t color;
+	//} m_borderColors[BORDER_BUFFER_SIZE]; // ring buffer of border colors in visible area (1 color per 8 pixels)
 	struct BorderColors
 	{
 		uint16_t x;
 		uint8_t y;
 		uint32_t color;
-	} m_borderColors[BORDER_BUFFER_SIZE]; // ring buffer of border colors in visible area (1 color per 8 pixels)
+	};
+	RingBuffer < BORDER_BUFFER_SIZE, struct BorderColors>  m_borderColors;// ring buffer of border colors in visible area (1 color per 8 pixels)
 	uint8_t m_pbWIndex = 0; // wr index of border ring buffer
 	uint8_t m_pbRIndex = 0; // rd index of border ring buffer
 	uint32_t m_borderColor; // border color out of visible area
@@ -474,9 +482,8 @@ private:
 		{
 			struct
 			{
-				uint8_t soundEnabled : 1;
 				uint8_t machineType : 1; // 0 - Spectrum 48
-				uint8_t unused : 6;
+				uint8_t unused : 7;
 			};
 			uint8_t rawData;
 		} emulSettins;
@@ -501,7 +508,6 @@ public:
 // Misc & Diag
 	uint32_t getEmulationTime() { return m_emulationTime; };
 	uint32_t getMaxEmulationTime() { return m_maxEmulTime; };
-	void enableSound(bool isEnable = true) { m_emulSettings.emulSettins.soundEnabled = (isEnable ? 1 : 0); };
 	void setMachine(uint8_t type) { m_emulSettings.emulSettins.machineType = type & 1; };
 	void storeState(const char* pFileName);
 	void restoreState(const char* pFileName);

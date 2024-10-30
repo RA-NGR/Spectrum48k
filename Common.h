@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
-#include <pico/divider.h>
+//#include <pico/divider.h>
 #include "hardware/dma.h"
 #include "hardware/pio.h"
 #include "hardware/clocks.h"

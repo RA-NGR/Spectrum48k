@@ -332,29 +332,19 @@ bool Keyboard::onTimer(struct repeating_timer* pTimer)
 const uint8_t dispInitSeq[] = {  // Cmd, params count, params list OR cmd 255 and delay time in ms
     0x01, 255, 5,																	  					 // ILI9341 Reset, wait 5 ms
     0x28,   0,																		  					 // ILI9341_DISPOFF
-    0xCF,   3, 0x00, 0xC1, 0x30,													  					 // ILI9341 Power control B
-    0xED,   4, 0x64, 0x03, 0x12, 0x81,												  					 // ILI9341 Power on sequence control 
     0xE8,   3, 0x85, 0x00, 0x78,													  					 // ILI9341 Driver timing control A
     0xCB,   5, 0x39, 0x2C, 0x00, 0x34, 0x02,										  					 // ILI9341 Power control A 
-    //0xF7,   1, 0x20,																  					 // ILI9341 pump ratio control
     0xF7,   1, 0x30,																  					 // ILI9341 pump ratio control
     0xEA,   2, 0x00, 0x00,															  					 // ILI9341 Driver timing control B 
-    //0xC0,   1, 0x09,																  					 // ILI9341_PWCTR1
     0xC0,   1, 0x23,																  					 // ILI9341_PWCTR1
-    //0xC1,   1, 0x00,																  					 // ILI9341_PWCTR2
     0xC1,   1, 0x10,																  					 // ILI9341_PWCTR2
-    //0xC5,   2, 0x18, 0x3C,															  					 // ILI9341_VMCTR1
     0xC5,   2, 0x3E, 0x28,															  					 // ILI9341_VMCTR1
-    //0xC7,   1, 0x9D,																  					 // ILI9341_VMCTR2
     0xC7,   1, 0x86,																  					 // ILI9341_VMCTR2
     0x36,   1, 0xE8,																  					 // ILI9341_MADCTL <- ILI9341_MADCTL_MV | ILI9341_MADCTL_MY | TFT_MAD_MX | ILI9341_MADCTL_BGR
     0x3A,   1, 0x55,																  					 // ILI9341_PIXFMT
     0xB1,   2, 0x00, TFT_REFRESHRATE,										  					         // ILI9341_FRMCTR1 <- frame rate n Hz
-    //0x35,   1, 0x00,																  					 // ILI9341_TEON <- vsync + hsync
     0xB6,   3, 0x08, 0x82, 0x27,													  					 // ILI9341_DFUNCTR
-    //0xF2,   1, 0x00,																  					 // ILI9341_ENABLE_3G
     0xF2,   1, 0x02,																  					 // ILI9341_ENABLE_3G
-    //0x26,   1, 0x00,																  					 // ILI9341_GAMMASET
     0x26,   1, 0x01,																  					 // ILI9341_GAMMASET
     0xE0,  15, 0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00, // ILI9341_GMCTRP1
     0xE1,  15, 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F, // ILI9341_GMCTRN1
@@ -422,11 +412,12 @@ bool Display::init()
     return m_initComplete;
 }
 
-void Display::writeCommand(uint8_t cmd)
+inline void Display::writeCommand(uint8_t cmd)
 {
     m_pio->fdebug = m_pullStallMask; while (!(m_pio->fdebug & m_pullStallMask));
     m_pio->sm[m_pioSM].instr = m_pioInstrClrDC;
-    m_pio->txf[m_pioSM] = (cmd); m_pio->fdebug = m_pullStallMask; while (!(m_pio->fdebug & m_pullStallMask));
+//    m_pio->txf[m_pioSM] = (cmd); m_pio->fdebug = m_pullStallMask; while (!(m_pio->fdebug & m_pullStallMask));
+    writeData(cmd);
     m_pio->sm[m_pioSM].instr = m_pioInstrSetDC;
 }
 

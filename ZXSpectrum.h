@@ -410,7 +410,11 @@ private:
 	void __attribute__((section(".time_critical." "writePort"))) writePort(uint16_t port, uint8_t data);
 	uint8_t __attribute__((section(".time_critical." "readPort"))) readPort(uint16_t port);
 // Graphics out
-	const uint32_t m_colorLookup[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
+	//const uint32_t m_colorLookup[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
+	//									 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
+	//const uint32_t m_colorLookup[16] = { 0x00000000, 0x15001500, 0x00A800A8, 0x15A815A8, 0x60056005, 0x75057505, 0x60AD60AD, 0x75AD75AD,
+	//									 0x00000000, 0x1B001B00, 0x00D800D8, 0x1BD81BD8, 0x00070007, 0x1B071B07, 0x00DF00DF, 0x1BDF1BDF };
+	const uint32_t m_colorLookup[16] = { 0x00000000, 0x15001500, 0x00A800A8, 0x15A815A8, 0x60056005, 0x75057505, 0x60AD60AD, 0x75AD75AD,
 										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
 	const uint32_t m_colorInvertMask[2] = { 0x00, 0xFF };
 	const uint32_t m_pixelBitMask[4] = { 0x00000000, 0xFFFF0000, 0x0000FFFF, 0xFFFFFFFF };
@@ -466,8 +470,9 @@ private:
 	uint32_t* m_pScreenBuffer[2];
 	int16_t m_scanLine = -1;
 	Display* m_pDisplayInstance;
-	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
-// Misc & Diag
+	void /*__attribute__((section(".time_critical." "drawLine"))) */drawLine(int posY);
+	void __attribute__((section(".time_critical." "drawScreen"))) drawScreen(int tStatesToDraw);
+	// Misc & Diag
 	struct ZXSettings
 	{
 		int tStatesPerLoop;

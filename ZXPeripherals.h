@@ -159,7 +159,7 @@ private:
 	uint32_t m_pullStallMask = 0;
 	int m_dmaChannel = -1;
 	dma_channel_config m_dmaConfig;
-	inline void writeCommand(uint8_t cmd);
-	inline void writeData(uint8_t data) { m_pio->txf[m_pioSM] = (data); m_pio->fdebug = m_pullStallMask; while (!(m_pio->fdebug & m_pullStallMask)); };
+	void writeCommand(uint8_t cmd);
+	void writeData(uint8_t data) { m_pio->txf[m_pioSM] = (data); m_pio->fdebug = m_pullStallMask; while (!(m_pio->fdebug & m_pullStallMask)); };
 };
 

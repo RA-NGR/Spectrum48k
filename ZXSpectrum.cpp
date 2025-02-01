@@ -1375,8 +1375,8 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 	m_emulSettings.irqLength = (!is128 ? 32 : 35);
 	m_emulSettings.contentionStart = (!is128 ? 14335 : 14361 + 1);
 	m_emulSettings.contentionEnd = m_emulSettings.contentionStart + 191 * m_emulSettings.tStatesPerLine + 128 - 2 - 1;
-	m_emulSettings.borderStart = (!is128 ? m_emulSettings.contentionStart + 1 - 16 - 24 * m_emulSettings.tStatesPerLine : 
-								  m_emulSettings.contentionStart + 1 - 16 - 24 * m_emulSettings.tStatesPerLine);
+	m_emulSettings.borderStart = (!is128 ? m_emulSettings.contentionStart + 1 - BORDER_SHIFT - 24 * m_emulSettings.tStatesPerLine : 
+								  m_emulSettings.contentionStart + 1 - BORDER_SHIFT - 24 * m_emulSettings.tStatesPerLine);
 	m_emulSettings.borderEnd = m_emulSettings.borderStart + 240 * m_emulSettings.tStatesPerLine;
 	m_emulSettings.audioStatesDivider = (!is128 ? 16 : 19);
 	if (!is128)
@@ -1456,15 +1456,15 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 	{
 		if (m_outPortFE.borderColor != (data & 7))
 		{
-			if (m_Z80Processor.tCount >= m_emulSettings.borderStart && m_Z80Processor.tCount < m_emulSettings.borderEnd)
-			{
-				struct BorderColors value;
-				value.y = (m_Z80Processor.tCount - m_emulSettings.borderStart) / m_emulSettings.tStatesPerLine;
-				value.x = ((m_Z80Processor.tCount - m_emulSettings.borderStart) % m_emulSettings.tStatesPerLine) / 4;
-				value.color = m_colorLookup[data & 0x07]; 
-				m_borderColors.putData(value);
-			}
-			else
+			//if (m_Z80Processor.tCount >= m_emulSettings.borderStart && m_Z80Processor.tCount < m_emulSettings.borderEnd)
+			//{
+			//	struct BorderColors value;
+			//	value.y = (m_Z80Processor.tCount - m_emulSettings.borderStart) / m_emulSettings.tStatesPerLine;
+			//	value.x = ((m_Z80Processor.tCount - m_emulSettings.borderStart) % m_emulSettings.tStatesPerLine) / 4;
+			//	value.color = m_colorLookup[data & 0x07]; 
+			//	m_borderColors.putData(value);
+			//}
+			//else
 				m_borderColor = m_colorLookup[data & 0x07];
 		}
 		if (m_outPortFE.soundOut != ((data >> 4) & 1))
@@ -1548,8 +1548,10 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 void ZXSpectrum::loopZ80()
 {
 	uint64_t startTime = micros();
-	int32_t usedCycles;
+	int32_t usedCycles, temp;
 	rp2040.fifo.push(START_FRAME);
+	drawScreen(-1);
+//	m_pDisplayInstance->setAddrWindow(0, 0, 319, 239);
 	while (m_Z80Processor.tCount < m_emulSettings.borderStart)
 	{
 		if (m_Z80Processor.tCount < m_emulSettings.irqLength) intZ80();
@@ -1561,21 +1563,23 @@ void ZXSpectrum::loopZ80()
 			m_ZXTape.stateCycles -= usedCycles;	if (m_ZXTape.stateCycles <= 0) processTape();
 		}
 	}
-	while (m_Z80Processor.tCount < m_emulSettings.borderEnd + (m_emulSettings.tStatesPerLine << 1))
+	while (m_Z80Processor.tCount < m_emulSettings.borderEnd/* + (m_emulSettings.tStatesPerLine << 1)*/)
 	{
 		usedCycles = m_Z80Processor.tCount;
 		stepZ80();
-		usedCycles = m_Z80Processor.tCount - usedCycles;
+		temp = usedCycles = m_Z80Processor.tCount - usedCycles;
 		if (m_ZXTape.isTapeActive)
 		{
 			m_ZXTape.stateCycles -= usedCycles; if (m_ZXTape.stateCycles <= 0) processTape();
 		}
-		int16_t scanLine = m_Z80Processor.tCount / m_emulSettings.tStatesPerLine - 1;
-		if (m_scanLine != scanLine)
-		{
-			m_scanLine = scanLine;
-			if (m_scanLine >= SCREENOFFSET && m_scanLine <= SCREENOFFSET + 239) drawLine(m_scanLine - SCREENOFFSET);
-		}
+		//usedCycles = m_Z80Processor.tCount;
+		//stepZ80();
+		//usedCycles = m_Z80Processor.tCount - usedCycles;
+		//if (m_ZXTape.isTapeActive)
+		//{
+		//	m_ZXTape.stateCycles -= usedCycles; if (m_ZXTape.stateCycles <= 0) processTape();
+		//}
+		drawScreen(usedCycles);
 	}
 	while (m_Z80Processor.tCount < m_emulSettings.tStatesPerLoop)
 	{
@@ -1594,7 +1598,110 @@ void ZXSpectrum::loopZ80()
 	if (m_maxEmulTime < m_emulationTime && !m_ZXTape.isTapeActive) m_maxEmulTime = m_emulationTime;
 	while (!(rp2040.fifo.pop() & STOP_FRAME));
 }
+
+
+//void ZXSpectrum::loopZ80()
+//{
+//	uint64_t startTime = micros();
+//	int32_t usedCycles;
+//	rp2040.fifo.push(START_FRAME);
+//	while (m_Z80Processor.tCount < m_emulSettings.borderStart)
+//	{
+//		if (m_Z80Processor.tCount < m_emulSettings.irqLength) intZ80();
+//		usedCycles = m_Z80Processor.tCount;
+//		stepZ80();
+//		usedCycles = m_Z80Processor.tCount - usedCycles;
+//		if (m_ZXTape.isTapeActive)
+//		{
+//			m_ZXTape.stateCycles -= usedCycles;	if (m_ZXTape.stateCycles <= 0) processTape();
+//		}
+//	}
+//	while (m_Z80Processor.tCount < m_emulSettings.borderEnd + (m_emulSettings.tStatesPerLine << 1))
+//	{
+//		usedCycles = m_Z80Processor.tCount;
+//		stepZ80();
+//		usedCycles = m_Z80Processor.tCount - usedCycles;
+//		if (m_ZXTape.isTapeActive)
+//		{
+//			m_ZXTape.stateCycles -= usedCycles; if (m_ZXTape.stateCycles <= 0) processTape();
+//		}
+//		int16_t scanLine = m_Z80Processor.tCount / m_emulSettings.tStatesPerLine - 1;
+//		if (m_scanLine != scanLine)
+//		{
+//			m_scanLine = scanLine;
+//			if (m_scanLine >= SCREENOFFSET && m_scanLine <= SCREENOFFSET + 239) drawLine(m_scanLine - SCREENOFFSET);
+//		}
+//	}
+//	while (m_Z80Processor.tCount < m_emulSettings.tStatesPerLoop)
+//	{
+//		usedCycles = m_Z80Processor.tCount;
+//		stepZ80();
+//		usedCycles = m_Z80Processor.tCount - usedCycles;
+//		if (m_ZXTape.isTapeActive)
+//		{
+//			m_ZXTape.stateCycles -= usedCycles; if (m_ZXTape.stateCycles <= 0) processTape();
+//		}
+//	}
+//	rp2040.fifo.push_nb(STOP_FRAME);
+//	m_Z80Processor.tCount -= m_emulSettings.tStatesPerLoop;
+//	m_frameCounter = (++m_frameCounter) & 0x1F;
+//	m_emulationTime = micros() - startTime;
+//	if (m_maxEmulTime < m_emulationTime && !m_ZXTape.isTapeActive) m_maxEmulTime = m_emulationTime;
+//	while (!(rp2040.fifo.pop() & STOP_FRAME));
+//}
+ 
 // Graphics out
+void ZXSpectrum::drawScreen(int tSatesToDraw)
+{
+	static int posX, posY, buffSwitch = 0;
+	static uint32_t* pScreenBuffer = m_pScreenBuffer[buffSwitch];
+
+	if (tSatesToDraw < 0)
+	{
+		posY = posX = 0;
+		return;
+	}
+ 	for (; tSatesToDraw > 0; tSatesToDraw--)
+	{
+		int flashAttr = (m_frameCounter >> 4) & 1;
+		struct BorderColors value;
+		if (posX < 160 && posY < 240)
+		{
+			if (posX < 16 || posX > 143)
+			{
+				*pScreenBuffer++ = m_borderColor;
+			}
+			else
+			{
+				if (posY < 24 || posY > 215)
+				{
+					*pScreenBuffer++ = m_borderColor;
+				}
+				else
+				{
+					uint8_t attrData = *(screenAddress(m_attributesMemOffset[posY] + ((posX - 16) >> 2))), pixelData = *(screenAddress(m_pixelsMemOffset[posY] + ((posX - 16) >> 2))) ^ m_colorInvertMask[(attrData >> 7) & flashAttr],
+							bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
+					uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex];
+					fgColorMask = m_pixelBitMask[(pixelData >> (6 - ((posX & 3) << 1))) & 3];	bgColorMask = ~fgColorMask;
+					*pScreenBuffer++ = (fgColorMask & fgColor) | (bgColorMask & bgColor);
+				}
+			}
+		}
+		++posX;
+		if (posX >= m_emulSettings.tStatesPerLine)
+		{
+			posX = 0; 
+			++posY;
+		}
+	}
+	if (pScreenBuffer - m_pScreenBuffer[buffSwitch] > 160 * (DMA_BUFF_SIZE - 1))
+	{
+		m_pDisplayInstance->drawBuffer(buffSwitch, (pScreenBuffer - m_pScreenBuffer[buffSwitch]) * 2);
+		buffSwitch = (buffSwitch + 1) & 1;
+		pScreenBuffer = m_pScreenBuffer[buffSwitch];
+	}
+}
+
 void ZXSpectrum::drawLine(int posY)
 {
 	int posX, buffSwitch = (posY / DMA_BUFF_SIZE) & 1;

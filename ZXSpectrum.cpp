@@ -1565,6 +1565,7 @@ void ZXSpectrum::loopZ80()
 	}
 	while (m_Z80Processor.tCount < m_emulSettings.borderEnd/* + (m_emulSettings.tStatesPerLine << 1)*/)
 	{
+		drawScreen(usedCycles);
 		usedCycles = m_Z80Processor.tCount;
 		stepZ80();
 		temp = usedCycles = m_Z80Processor.tCount - usedCycles;
@@ -1579,7 +1580,6 @@ void ZXSpectrum::loopZ80()
 		//{
 		//	m_ZXTape.stateCycles -= usedCycles; if (m_ZXTape.stateCycles <= 0) processTape();
 		//}
-		drawScreen(usedCycles);
 	}
 	while (m_Z80Processor.tCount < m_emulSettings.tStatesPerLoop)
 	{

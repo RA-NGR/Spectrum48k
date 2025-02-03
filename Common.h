@@ -42,7 +42,7 @@
 //#define TFT_REFRESHRATE 0x1F /* 61 Hz	 */
 
 
-#define BORDER_SHIFT 0
+#define BORDER_SHIFT 24
 
 #define DMA_BUFF_SIZE 30
 

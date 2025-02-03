@@ -470,8 +470,8 @@ private:
 	uint32_t* m_pScreenBuffer[2];
 	int16_t m_scanLine = -1;
 	Display* m_pDisplayInstance;
-	void /*__attribute__((section(".time_critical." "drawLine"))) */drawLine(int posY);
-	void __attribute__((section(".time_critical." "drawScreen"))) drawScreen(int tStatesToDraw);
+	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
+	//void __attribute__((section(".time_critical." "drawScreen"))) drawScreen(int tStatesToDraw);
 	// Misc & Diag
 	struct ZXSettings
 	{

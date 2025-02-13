@@ -450,12 +450,6 @@ private:
 												  0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x1AE0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 												  0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 	};
-//	struct BorderColors
-	//{
-	//	uint16_t x;
-	//	uint8_t y;
-	//	uint32_t color;
-	//} m_borderColors[BORDER_BUFFER_SIZE]; // ring buffer of border colors in visible area (1 color per 8 pixels)
 	struct BorderColors
 	{
 		uint16_t x;
@@ -470,8 +464,11 @@ private:
 	uint32_t* m_pScreenBuffer[2];
 	int16_t m_scanLine = -1;
 	Display* m_pDisplayInstance;
-	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
+#ifdef NEW_PATH
 	void __attribute__((section(".time_critical." "drawScreen"))) drawScreen(int tStatesToDraw);
+#else
+	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
+#endif // NEW_PATH
 	// Misc & Diag
 	struct ZXSettings
 	{

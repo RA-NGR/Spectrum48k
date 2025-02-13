@@ -160,17 +160,19 @@ uint16_t Sound::genSound(uint16_t tStates)
     return sample / 8;
 }
 
-void Sound::update(uint32_t ctrlData)
+void Sound::update()
 {
+    uint32_t ctrlData = 0;
+    if (rp2040.fifo.pop_nb(&ctrlData))
     {
-        if ((ctrlData & 0xFFFFFFFE) == RESET)
+        if ((ctrlData & 0xFF000000) == RESET)
         {
             m_samplesPerLoop = 4368 - 636 * (ctrlData & 1); m_samplesPerOut = 7 - (ctrlData & 1); m_enableAY = (ctrlData & 1); // Beeper init
             reset();
             m_currBuff = 0; 
         }
-        if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -32, onTimer, this, &m_clockTimer);
-        if (ctrlData & WR_PORT)
+        if ((ctrlData & 0xFF000000) == START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -32, onTimer, this, &m_clockTimer);
+        if ((ctrlData & 0xFF000000) == WR_PORT)
         {
             if (ctrlData & AY_PORT)
             {
@@ -190,7 +192,7 @@ void Sound::update(uint32_t ctrlData)
                 m_beeprBuffer.putData(ctrlData & 0x0000FFFF);
             }
         }
-        if (ctrlData & SET_VOL) m_soundVol = (ctrlData & 0x0000FFFF);// == 0 ? 0 : (ctrlData & 0x0000FFFF) * 64 - 1;
+        if ((ctrlData & 0xFF000000) == SET_VOL) m_soundVol = (ctrlData & 0x0000FFFF);// == 0 ? 0 : (ctrlData & 0x0000FFFF) * 64 - 1;
         //if (ctrlData & STOP_FRAME)
         //{
         //    uint16_t soundBit = m_prevBit, sample;

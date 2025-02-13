@@ -207,5 +207,10 @@ void setup1()
 
 void loop1()
 {
-	if (g_sysMode == modeEmulator) g_mainSpeaker.update();
+	uint32_t ctrlData = 0;
+	if (rp2040.fifo.pop_nb(&ctrlData))
+	{
+//		if (ctrlData && DRAW) g_mainDisplay.writeData16(ctrlData & 0x0000FFFF);
+		if (g_sysMode == modeEmulator) g_mainSpeaker.update(ctrlData);
+	}
 }

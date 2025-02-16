@@ -391,7 +391,8 @@ bool Display::init()
     sm_config_set_set_pins(&smCfg, TFT_DC, 1);
     sm_config_set_sideset_pins(&smCfg, TFT_WR);
     sm_config_set_out_pins(&smCfg, TFT_DATA, 16);
-    sm_config_set_clkdiv_int_frac(&smCfg, PIO_CLK_DIV, PIO_CLK_FRACT);
+//    sm_config_set_clkdiv_int_frac(&smCfg, PIO_CLK_DIV, PIO_CLK_FRACT);
+    sm_config_set_clkdiv(&smCfg, PIO_CLK_DIV_F);
     sm_config_set_fifo_join(&smCfg, PIO_FIFO_JOIN_TX);
     sm_config_set_out_shift(&smCfg, false, false, 0);
     pio_sm_init(m_pio, m_pioSM, programOffset, &smCfg);

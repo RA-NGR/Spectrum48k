@@ -146,13 +146,13 @@ public:
 	Display() { };
 	~Display();
 	bool init();
-	uint16_t* getBuffer(uint8_t bufferIndex) { return (!m_initComplete ? NULL : m_pDMABuffers[bufferIndex & 0x01]); };
-	void drawBuffer(uint8_t bufferIndex, uint16_t bufferSize);
+	uint16_t* getBuffer() { return (!m_initComplete ? NULL : m_pDMABuffer); };
+	void drawBuffer(uint16_t bufferSize);
 	void setAddrWindow(uint16_t startX, uint16_t startY, uint16_t endX, uint16_t endY);
 	void writeData16(uint16_t data) { m_pio->txf[m_pioSM] = (data); m_pio->fdebug = m_pullStallMask; while (!(m_pio->fdebug & m_pullStallMask)); };
 private:
 	bool m_initComplete = false;
-	uint16_t* m_pDMABuffers[2] = { 0 };
+	uint16_t* m_pDMABuffer;
 	PIO m_pio = 0;
 	int m_pioSM = -1;
 	uint32_t m_pioInstrSetDC = 0;

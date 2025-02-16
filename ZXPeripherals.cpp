@@ -330,8 +330,8 @@ bool Keyboard::onTimer(struct repeating_timer* pTimer)
 const uint8_t dispInitSeq[] = {  // Cmd, params count, params list OR cmd 255 and delay time in ms
     0x01, 255, 5,																	  					 // ILI9341 Reset, wait 5 ms
     0x28,   0,																		  					 // ILI9341_DISPOFF
-    0xCF,   3, 0x00, 0xC1, 0x30,													  					 // ILI9341 Power control B
-    0xED,   4, 0x64, 0x03, 0x12, 0x81,												  					 // ILI9341 Power on sequence control 
+    //0xCF,   3, 0x00, 0xC1, 0x30,													  					 // ILI9341 Power control B
+    //0xED,   4, 0x64, 0x03, 0x12, 0x81,												  					 // ILI9341 Power on sequence control 
     0xE8,   3, 0x85, 0x00, 0x78,													  					 // ILI9341 Driver timing control A
     0xCB,   5, 0x39, 0x2C, 0x00, 0x34, 0x02,										  					 // ILI9341 Power control A 
     //0xF7,   1, 0x20,																  					 // ILI9341 pump ratio control
@@ -358,22 +358,21 @@ const uint8_t dispInitSeq[] = {  // Cmd, params count, params list OR cmd 255 an
     0xE1,  15, 0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F, // ILI9341_GMCTRN1
     0x11, 255, 120,																						 // ILI9341_SLPOUT, wait 120 ms
     0x29,   0,																							 // ILI9341_DISPON
-    0x2A,   4, 0x00, 0x00, 0x01, 0x3F,																  	 // ILI9341_CASET 0 - 319
-    0x2B,   4, 0x00, 0x00, 0x00, 0xEF,																	 // ILI9341_PASET 0 - 239
-    0x2C,   0                                                                                            // ILI93441_RAMWR
+    //0x2A,   4, 0x00, 0x00, 0x01, 0x3F,																  	 // ILI9341_CASET 0 - 319
+    //0x2B,   4, 0x00, 0x00, 0x00, 0xEF,																	 // ILI9341_PASET 0 - 239
+    //0x2C,   0                                                                                            // ILI93441_RAMWR
 };
 
 Display::~Display()
 {
     dma_channel_unclaim(m_dmaChannel);
     pio_sm_unclaim(m_pio, m_pioSM);
-    for (int i = 0; i < 2; i++) if (m_pDMABuffers[i]) free(m_pDMABuffers[i]);
+    if (m_pDMABuffer) free(m_pDMABuffer);
 }
 
 bool Display::init()
 {
-    for (int i = 0; i < 2; i++)
-        if ((m_pDMABuffers[i] = (uint16_t*)calloc(320 * DMA_BUFF_SIZE, sizeof(uint16_t))) == NULL) { DBG_PRINTLN("Error allocating DMA buffers"); return m_initComplete; };
+    if ((m_pDMABuffer = (uint16_t*)calloc(320, sizeof(uint16_t))) == NULL) { DBG_PRINTLN("Error allocating DMA buffer"); return m_initComplete; };
     m_pio = pio0;
     if ((m_pioSM = pio_claim_unused_sm(m_pio, false)) < 0)
     {
@@ -411,6 +410,7 @@ bool Display::init()
         else
             delay((uint32_t)(*dataPtr++));
     }
+    setAddrWindow(0, 0, 319, 239);
     if ((m_dmaChannel = dma_claim_unused_channel(false)) < 0) { DBG_PRINTLN("Unable to get DMA"); return m_initComplete; };
     m_dmaConfig = dma_channel_get_default_config(m_dmaChannel);
     channel_config_set_transfer_data_size(&m_dmaConfig, DMA_SIZE_16);
@@ -428,11 +428,11 @@ void Display::writeCommand(uint8_t cmd)
     m_pio->sm[m_pioSM].instr = m_pioInstrSetDC;
 }
 
-void Display::drawBuffer(uint8_t bufferIndex, uint16_t bufferSize)
+void Display::drawBuffer(uint16_t bufferSize)
 {
     if (!m_initComplete) return;
     while (dma_channel_is_busy(m_dmaChannel));
-    dma_channel_configure(m_dmaChannel, &m_dmaConfig, &m_pio->txf[m_pioSM], m_pDMABuffers[bufferIndex & 1], bufferSize, true);
+    dma_channel_configure(m_dmaChannel, &m_dmaConfig, &m_pio->txf[m_pioSM], m_pDMABuffer, bufferSize, true);
 }
 
 void Display::setAddrWindow(uint16_t startX, uint16_t startY, uint16_t endX, uint16_t endY)

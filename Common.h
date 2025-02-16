@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
-//#include <pico/divider.h>
+#include <hardware/divider.h>
 #include "hardware/dma.h"
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
@@ -46,19 +46,19 @@
 
 #define BORDER_SHIFT 16
 
-#define DMA_BUFF_SIZE 30
-
 #define RESET		0x00000000
 #define START_FRAME 0x10000000
 #define STOP_FRAME  0x20000000
 #define WR_PORT     0x40000000
 #define SET_VOL     0x80000000
+#define RESERVED	0x01000000
 #define DRAW		0x02000000
-#define AY_PORT		0x08000000
 #define AY_DATA		0x04000000
+#define AY_PORT		0x08000000
 #define SCREENOFFSET 40
 
 #define BORDER_BUFFER_SIZE 64
+#define MEM_CHG_BUFFER_SIZE
 #define KBD_CLOCK 1000
 #define BEEPER_BUFFER_SIZE 1024
 #define AY_BUFFER_SIZE 512

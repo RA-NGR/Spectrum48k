@@ -229,7 +229,7 @@ uint8_t fontData[] = { // 8x8 Spectrum font with russian characters, codepage Wi
 
 void Browser::drawChar(const uint8_t ch, uint8_t posX, uint16_t foreColor, uint16_t backColor)
 {
-	uint16_t* pBuffer = m_pDisplayInstance->getBuffer(0);
+	uint16_t* pBuffer = m_pDisplayInstance->getBuffer();
 	if (ch < 32 || posX > 39) return;
 	uint16_t glyphPos = (uint16_t)(ch - 32) * 8;
 	for (int j = 0; j < 8; j++)
@@ -291,7 +291,7 @@ void Browser::drawString(const String textStr, uint8_t posX, uint8_t posY, uint1
 	m_pDisplayInstance->setAddrWindow(0, posY * 8, 319, posY * 8 + 7);
 	idx = 0;
 	while (decodedStr[idx]) drawChar(decodedStr[idx], posX + idx++, foreColor, backColor);
-	m_pDisplayInstance->drawBuffer(0, 320 * 8);
+	m_pDisplayInstance->drawBuffer(320 * 8);
 }
 
 void Browser::listFiles()

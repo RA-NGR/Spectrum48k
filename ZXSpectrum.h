@@ -327,7 +327,7 @@ private:
 		uint8_t q;
 		uint32_t halted;
 		uint32_t skipINT; // Processor is just after EI or within DD/FD prefixed opcode 
-		int tCount;
+		int32_t tCount;
 		void* pRegisters[8];
 		void* pPairs[5];
 		void* pDDRegisters[8];
@@ -456,30 +456,35 @@ private:
 		uint8_t y;
 		uint32_t color;
 	};
+	//struct MemoryChange
+	//{
+	//	uint16_t x;
+	//	uint8_t y;
+	//	uint16_t addr;
+	//	uint8_t value;
+	//};
 	RingBuffer < BORDER_BUFFER_SIZE, struct BorderColors>  m_borderColors;// ring buffer of border colors in visible area (1 color per 8 pixels)
-	uint8_t m_pbWIndex = 0; // wr index of border ring buffer
-	uint8_t m_pbRIndex = 0; // rd index of border ring buffer
 	uint32_t m_borderColor; // border color out of visible area
 	uint8_t m_frameCounter = 0;
-	uint32_t* m_pScreenBuffer[2];
+	uint32_t* m_pScreenBuffer;
 	int16_t m_scanLine = -1;
 	Display* m_pDisplayInstance;
 #ifdef NEW_PATH
-	void __attribute__((section(".time_critical." "drawScreen"))) drawScreen(int tStatesToDraw);
+	void __attribute__((section(".time_critical." "drawScreen"))) drawScreen(int32_t tStatesToDraw);
 #else
 	void __attribute__((section(".time_critical." "drawLine"))) drawLine(int posY);
 #endif // NEW_PATH
 	// Misc & Diag
 	struct ZXSettings
 	{
-		int tStatesPerLoop;
-		int tStatesPerLine;
-		int irqLength;
-		int contentionStart;
-		int contentionEnd;
-		int borderStart;
-		int borderEnd;
-		int audioStatesDivider;
+		int32_t tStatesPerLoop;
+		int32_t tStatesPerLine;
+		int32_t irqLength;
+		int32_t contentionStart;
+		int32_t contentionEnd;
+		int32_t borderStart;
+		int32_t borderEnd;
+		int32_t audioStatesDivider;
 		union 
 		{
 			struct

@@ -1399,7 +1399,6 @@ void ZXSpectrum::writeMem(uint16_t address, uint8_t data)
 
 uint8_t ZXSpectrum::readMem(uint16_t address)
 {
-//	if (address == 34902) DBG_PRINTF("PC: %04X\n", PC);
 	contendedAccess(address, 3);
 	return *memoryAddress(address);
 }
@@ -1473,10 +1472,8 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 		if (m_outPortFE.soundOut != ((data >> 4) & 1))
 			rp2040.fifo.push_nb((m_Z80Processor.tCount / m_emulSettings.audioStatesDivider) & 0x00007FFF | WR_PORT | (data & 0x10) << 11);
 		m_outPortFE.rawData = data;
-		//if (!m_emulSettings.emulSettins.machineType)
-		//	m_defaultPortVal = (data & 0x18 ? 0xFF : 0xBF); // issue 2 48K
-		//else
-			m_defaultPortVal = (data & 0x10 ? 0xFF : 0xBF); // issue 3 128K
+		//m_defaultPortVal = (data & 0x18 ? 0xFF : 0xBF); // issue 2
+		m_defaultPortVal = (data & 0x10 ? 0xFF : 0xBF); // issue 3
 		contendedAccess(CONTENDED, 2);
 	}
 	else
@@ -1551,7 +1548,6 @@ void ZXSpectrum::loopZ80()
 	uint64_t startTime = micros();
 	int32_t usedCycles, temp;
 	rp2040.fifo.push(START_FRAME);
-	drawScreen(-1);
 	while (m_Z80Processor.tCount < m_emulSettings.borderStart)
 	{
 		if (m_Z80Processor.tCount < m_emulSettings.irqLength) intZ80();
@@ -1574,7 +1570,7 @@ void ZXSpectrum::loopZ80()
 			m_ZXTape.stateCycles -= usedCycles; if (m_ZXTape.stateCycles <= 0) processTape();
 		}
 	}
-	//drawScreen(0);
+//	drawScreen(usedCycles);
 	while (m_Z80Processor.tCount < m_emulSettings.tStatesPerLoop)
 	{
 		usedCycles = m_Z80Processor.tCount;
@@ -1591,7 +1587,11 @@ void ZXSpectrum::loopZ80()
 	m_emulationTime = micros() - startTime;
 	if (m_maxEmulTime < m_emulationTime && !m_ZXTape.isTapeActive) m_maxEmulTime = m_emulationTime;
 	while (!(rp2040.fifo.pop() & STOP_FRAME));
-	//	delay(100);
+	if (m_debugActvie)
+	{
+		DBG_PRINTF("Frame count: %d\n", m_frameCounter);
+		delay(1000);
+	}
 }
 #else
 void ZXSpectrum::loopZ80()
@@ -1648,82 +1648,114 @@ void ZXSpectrum::loopZ80()
 
 // Graphics out
 #ifdef NEW_PATH
-void ZXSpectrum::drawScreen(int tSatesToDraw)
+void ZXSpectrum::drawScreen(int32_t tSatesToDraw)
 {
-	static int posX, posY, buffSwitch = 0, pix;
-	static uint32_t* pScreenBuffer = m_pScreenBuffer[buffSwitch];
-
-	if (tSatesToDraw < 0)
+//	static int posX, posY, buffSwitch = 0, pix;
+//	static uint32_t* pScreenBuffer = m_pScreenBuffer[buffSwitch];
+//
+//	if (tSatesToDraw < 0)
+//	{
+//		//m_pDisplayInstance->setAddrWindow(0, 0, 319, 239);
+//		//DBG_PRINTF("%d %d\n", posX, posY);
+//		pix = 0;
+//		posY = pix = 0;
+//		posX = -65535;
+//		return;
+//	}
+//	if (posX == -65535) posX = (m_Z80Processor.tCount - tSatesToDraw) - m_emulSettings.borderStart;
+//	for (; tSatesToDraw > 0; tSatesToDraw--)
+//	{
+//		if (posX >= 0)
+//		{
+//			int flashAttr = (m_frameCounter >> 4) & 1;
+//			if (posX < 160 && posY < 240)
+//			{
+//				if (posX < 16 || posX > 143)
+//				{
+//					*pScreenBuffer++ = m_borderColor;
+//					//m_pDisplayInstance->writeData16(m_borderColor);
+//					//m_pDisplayInstance->writeData16(m_borderColor >> 16);
+//					//rp2040.fifo.push_nb(DRAW | (m_borderColor & 0x0000FFFF));
+//					//rp2040.fifo.push_nb(DRAW | (m_borderColor >> 16));
+//				}
+//				else
+//				{
+//					if (posY < 24 || posY > 215)
+//					{
+//						*pScreenBuffer++ = m_borderColor;
+//						//m_pDisplayInstance->writeData16(m_borderColor >> 16);
+//						//m_pDisplayInstance->writeData16(m_borderColor);
+//						//rp2040.fifo.push_nb(DRAW | (m_borderColor & 0x0000FFFF));
+//						//rp2040.fifo.push_nb(DRAW | (m_borderColor >> 16));
+//					}
+//					else
+//					{
+//						uint8_t attrData = *(screenAddress(m_attributesMemOffset[posY] + ((posX - 16) >> 2))), pixelData = *(screenAddress(m_pixelsMemOffset[posY] + ((posX - 16) >> 2))) ^ m_colorInvertMask[(attrData >> 7) & flashAttr],
+//							bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
+//						uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex], pixData;
+//						fgColorMask = m_pixelBitMask[(pixelData >> (6 - ((posX & 3) << 1))) & 3];	bgColorMask = ~fgColorMask;
+//						pixData = (fgColorMask & fgColor) | (bgColorMask & bgColor);
+//						*pScreenBuffer++ = pixData;
+//						//rp2040.fifo.push_nb(DRAW | (pixData & 0x0000FFFF));
+//						//rp2040.fifo.push_nb(DRAW | (pixData >> 16));
+//						//m_pDisplayInstance->writeData16(pixData >> 16);
+//						//m_pDisplayInstance->writeData16(pixData);
+//					}
+//				}
+//			}
+//		}
+//		++posX;
+//		++pix;
+//		if (posX >= m_emulSettings.tStatesPerLine)
+//		{
+//			posX = 0;
+//			++posY;
+//		}
+//	}
+//	if (pScreenBuffer - m_pScreenBuffer[buffSwitch] > 160 * (DMA_BUFF_SIZE - 1))
+//	{
+////		m_pDisplayInstance->drawBuffer(buffSwitch, (pScreenBuffer - m_pScreenBuffer[buffSwitch]) * 2);
+//		buffSwitch = (buffSwitch + 1) & 1;
+//		pScreenBuffer = m_pScreenBuffer[buffSwitch];
+//	}
+	static int32_t buffSwitch = 0;
+	/*static */uint32_t* pScreenBuffer = m_pScreenBuffer[buffSwitch];
+	int32_t posX, posY;
+	//hw_divider_divmod_s32_start((m_Z80Processor.tCount - tSatesToDraw) - m_emulSettings.borderStart, m_emulSettings.tStatesPerLine);
+	//divmod_result_t result = hw_divider_result_wait();
+	//posY = to_quotient_s32(result); posX = to_remainder_s32(result);
+	posY = (m_Z80Processor.tCount - tSatesToDraw - m_emulSettings.borderStart) / m_emulSettings.tStatesPerLine;
+	posX = (m_Z80Processor.tCount - tSatesToDraw - m_emulSettings.borderStart) % m_emulSettings.tStatesPerLine;
+	for (; tSatesToDraw > 0; tSatesToDraw--, posX++)
 	{
-		//m_pDisplayInstance->setAddrWindow(0, 0, 319, 239);
-		//DBG_PRINTF("%d %d\n", posX, posY);
-		pix = 0;
-		posY = pix = 0;
-		posX = -65535;
-		return;
-	}
-	if (posX == -65535) posX = (m_Z80Processor.tCount - tSatesToDraw) - m_emulSettings.borderStart;
-	for (; tSatesToDraw > 0; tSatesToDraw--)
-	{
-		if (posX >= 0)
+		if (posX > m_emulSettings.tStatesPerLine - 1)
 		{
-			int flashAttr = (m_frameCounter >> 4) & 1;
-			if (posX < 160 && posY < 240)
-			{
-				if (posX < 16 || posX > 143)
-				{
-					*pScreenBuffer++ = m_borderColor;
-					//m_pDisplayInstance->writeData16(m_borderColor);
-					//m_pDisplayInstance->writeData16(m_borderColor >> 16);
-					//rp2040.fifo.push_nb(DRAW | (m_borderColor & 0x0000FFFF));
-					//rp2040.fifo.push_nb(DRAW | (m_borderColor >> 16));
-				}
-				else
-				{
-					if (posY < 24 || posY > 215)
-					{
-						*pScreenBuffer++ = m_borderColor;
-						//m_pDisplayInstance->writeData16(m_borderColor >> 16);
-						//m_pDisplayInstance->writeData16(m_borderColor);
-						//rp2040.fifo.push_nb(DRAW | (m_borderColor & 0x0000FFFF));
-						//rp2040.fifo.push_nb(DRAW | (m_borderColor >> 16));
-					}
-					else
-					{
-						uint8_t attrData = *(screenAddress(m_attributesMemOffset[posY] + ((posX - 16) >> 2))), pixelData = *(screenAddress(m_pixelsMemOffset[posY] + ((posX - 16) >> 2))) ^ m_colorInvertMask[(attrData >> 7) & flashAttr],
-							bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
-						uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex], pixData;
-						fgColorMask = m_pixelBitMask[(pixelData >> (6 - ((posX & 3) << 1))) & 3];	bgColorMask = ~fgColorMask;
-						pixData = (fgColorMask & fgColor) | (bgColorMask & bgColor);
-						*pScreenBuffer++ = pixData;
-						//rp2040.fifo.push_nb(DRAW | (pixData & 0x0000FFFF));
-						//rp2040.fifo.push_nb(DRAW | (pixData >> 16));
-						//m_pDisplayInstance->writeData16(pixData >> 16);
-						//m_pDisplayInstance->writeData16(pixData);
-					}
-				}
-			}
+			posX = 0; ++posY;
 		}
-		++posX;
-		++pix;
-		if (posX >= m_emulSettings.tStatesPerLine)
+		if (m_debugActvie)
 		{
-			posX = 0;
-			++posY;
+			DBG_PRINTF("%3d %3d\n", posX, posY);
 		}
+		if ((uint32_t)posY > 239) break;
+		uint32_t color = m_borderColor;
+		if ((uint32_t)posX > 159) continue; // outside the screen
+		if (posX > 15 && posX < 144 && posY > 23 && posY < 216)
+		{
+			uint8_t attrData = *(screenAddress(m_attributesMemOffset[posY] + ((posX - 16) >> 2))), pixelData = *(screenAddress(m_pixelsMemOffset[posY] + ((posX - 16) >> 2))) ^ m_colorInvertMask[(attrData >> 7) & (m_frameCounter >> 4) & 1],
+				bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
+			uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex];
+			fgColorMask = m_pixelBitMask[(pixelData >> (6 - ((posX & 3) << 1))) & 3];	bgColorMask = ~fgColorMask;
+			color = (fgColorMask & fgColor) | (bgColorMask & bgColor);
+		}
+		*pScreenBuffer++ = color;
 	}
-	if (pScreenBuffer - m_pScreenBuffer[buffSwitch] > 160 * (DMA_BUFF_SIZE - 1))
-	{
-//		m_pDisplayInstance->drawBuffer(buffSwitch, (pScreenBuffer - m_pScreenBuffer[buffSwitch]) * 2);
-		buffSwitch = (buffSwitch + 1) & 1;
-		pScreenBuffer = m_pScreenBuffer[buffSwitch];
-	}
+	m_pDisplayInstance->drawBuffer(buffSwitch, (pScreenBuffer - m_pScreenBuffer[buffSwitch]) * 2);
 }
 #else
 void ZXSpectrum::drawLine(int posY)
 {
-	int posX, buffSwitch = (posY / DMA_BUFF_SIZE) & 1;
-	uint32_t* pScreenBuffer = m_pScreenBuffer[buffSwitch] + ((posY % DMA_BUFF_SIZE) * 160);
+	int posX;
+	uint32_t* pScreenBuffer = m_pScreenBuffer;
 	uint8_t* pPixelData = screenAddress(m_pixelsMemOffset[posY]);
 	uint8_t* pAttrData = screenAddress(m_attributesMemOffset[posY]);
 	int flashAttr = (m_frameCounter >> 4) & 1;
@@ -1743,7 +1775,7 @@ void ZXSpectrum::drawLine(int posY)
 		else
 		{
 			uint8_t attrData = *pAttrData++, pixelData = *pPixelData++ ^ m_colorInvertMask[(attrData >> 7) & flashAttr],
-				bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
+					bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
 			uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex];
 			fgColorMask = m_pixelBitMask[(pixelData >> 6) & 3];	bgColorMask = ~fgColorMask;
 			*pScreenBuffer++ = (fgColorMask & fgColor) | (bgColorMask & bgColor);
@@ -1762,7 +1794,7 @@ void ZXSpectrum::drawLine(int posY)
 	}
 	for (; posX < 40 + 16 + m_emulSettings.emulSettins.machineType; posX++) // Retrace
 		if (m_borderColors.getData(value) && posY == value.y && posX == value.x) { m_borderColor = value.color; m_borderColors.completeGet(); }
-	if (posY % DMA_BUFF_SIZE == DMA_BUFF_SIZE - 1) m_pDisplayInstance->drawBuffer(buffSwitch, 320 * DMA_BUFF_SIZE);
+	m_pDisplayInstance->drawBuffer(320);
 }
 #endif // NEW_PATH
 
@@ -1771,7 +1803,7 @@ void ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 	int i;
 	m_emulSettings.emulSettins.machineType = 0;
 	m_pDisplayInstance = pDisplayInstance;
-	for (i = 0; i < 2; i++) m_pScreenBuffer[i] = (uint32_t*)m_pDisplayInstance->getBuffer(i);
+	m_pScreenBuffer = (uint32_t*)m_pDisplayInstance->getBuffer();
 	for (i = 0; i < 8; i++)
 	{
 		if ((m_pRAMBanks[i] = (uint8_t*)malloc(16384)) == NULL)

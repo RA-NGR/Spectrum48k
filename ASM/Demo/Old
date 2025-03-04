@@ -1,0 +1,13 @@
+        LET tile = 0
+        DO
+            LET lin = 16                 ' random values 16,32,..,192
+            LET col = 0                    ' random values 0,2,4,..,30
+            NIRVANAhalt()
+            NIRVANAdrawT(tile, lin, col)
+            LET tile = tile + 1
+            IF tile > 15 THEN 
+                LET tile = 0
+            END IF
+            INPUT a
+        LOOP UNTIL INKEY$<>""
+

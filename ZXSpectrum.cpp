@@ -1375,7 +1375,7 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 	m_emulSettings.irqLength = (!is128 ? 32 : 35);
 	m_emulSettings.contentionStart = (!is128 ? 14335 : 14361 + 1);
 	m_emulSettings.contentionEnd = m_emulSettings.contentionStart + 191 * m_emulSettings.tStatesPerLine + 128 - 2 - 1;
-	m_emulSettings.borderStart = (!is128 ? m_emulSettings.contentionStart + 1 - BORDER_SHIFT - 24 * m_emulSettings.tStatesPerLine : 
+	m_emulSettings.borderStart = (!is128 ? m_emulSettings.contentionStart + 1 - BORDER_SHIFT - 24 * m_emulSettings.tStatesPerLine: 
 								  m_emulSettings.contentionStart + 1 - BORDER_SHIFT - 24 * m_emulSettings.tStatesPerLine);
 	m_emulSettings.borderEnd = m_emulSettings.borderStart + 240 * m_emulSettings.tStatesPerLine;
 	m_emulSettings.audioStatesDivider = (!is128 ? 16 : 19);
@@ -1394,7 +1394,24 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 void ZXSpectrum::writeMem(uint16_t address, uint8_t data)
 {
 	contendedAccess(address, 3);
-	if (address >> 14) *memoryAddress(address) = data;
+	if (address >> 14)
+	{
+		uint8_t oldData = *memoryAddress(address);
+		*memoryAddress(address) = data;
+		if (address >> 15) return;
+		//uint16_t posY = m_Z80Processor.tCount / m_emulSettings.tStatesPerLine, posX = (m_Z80Processor.tCount % m_emulSettings.tStatesPerLine) / 4;
+		//if (posY < SCREENOFFSET + 24 || posX > 31) return;
+		//if (/*((address - 0x4000 >= m_pixelsMemOffset[posY - SCREENOFFSET] + posX) && (address - 0x4000 < m_pixelsMemOffset[posY - SCREENOFFSET] + 32)) ||*/ 
+		//	((address - 0x4000 >= m_attributesMemOffset[posY - SCREENOFFSET]) && (address - 0x4000 <= m_attributesMemOffset[posY - SCREENOFFSET] + posX)))
+		//{
+		//	//DBG_PRINTF("T: %6d X: %2d Y: %3d addr:%04X\n", m_Z80Processor.tCount, posX, posY - SCREENOFFSET, address - 0x4000);
+		//	struct MemoryChange memChng;
+		//	memChng.x = address - 0x4000 - m_attributesMemOffset[posY - SCREENOFFSET];//posX;
+		//	memChng.y = posY / 8;
+		//	memChng.value = oldData;
+		//	m_videoMemChange.putData(memChng);
+		//}
+	}
 }
 
 uint8_t ZXSpectrum::readMem(uint16_t address)
@@ -1718,47 +1735,47 @@ void ZXSpectrum::drawScreen(int32_t tSatesToDraw)
 //		buffSwitch = (buffSwitch + 1) & 1;
 //		pScreenBuffer = m_pScreenBuffer[buffSwitch];
 //	}
-	static int32_t buffSwitch = 0;
-	/*static */uint32_t* pScreenBuffer = m_pScreenBuffer[buffSwitch];
-	int32_t posX, posY;
-	//hw_divider_divmod_s32_start((m_Z80Processor.tCount - tSatesToDraw) - m_emulSettings.borderStart, m_emulSettings.tStatesPerLine);
-	//divmod_result_t result = hw_divider_result_wait();
-	//posY = to_quotient_s32(result); posX = to_remainder_s32(result);
-	posY = (m_Z80Processor.tCount - tSatesToDraw - m_emulSettings.borderStart) / m_emulSettings.tStatesPerLine;
-	posX = (m_Z80Processor.tCount - tSatesToDraw - m_emulSettings.borderStart) % m_emulSettings.tStatesPerLine;
-	for (; tSatesToDraw > 0; tSatesToDraw--, posX++)
+static int32_t buffSwitch = 0;
+/*static */uint32_t* pScreenBuffer = m_pScreenBuffer;
+int32_t posX, posY;
+//hw_divider_divmod_s32_start((m_Z80Processor.tCount - tSatesToDraw) - m_emulSettings.borderStart, m_emulSettings.tStatesPerLine);
+//divmod_result_t result = hw_divider_result_wait();
+//posY = to_quotient_s32(result); posX = to_remainder_s32(result);
+posY = (m_Z80Processor.tCount - tSatesToDraw - m_emulSettings.borderStart) / m_emulSettings.tStatesPerLine;
+posX = (m_Z80Processor.tCount - tSatesToDraw - m_emulSettings.borderStart) % m_emulSettings.tStatesPerLine;
+for (; tSatesToDraw > 0; tSatesToDraw--, posX++)
+{
+	if (posX > m_emulSettings.tStatesPerLine - 1)
 	{
-		if (posX > m_emulSettings.tStatesPerLine - 1)
-		{
-			posX = 0; ++posY;
-		}
-		if (m_debugActvie)
-		{
-			DBG_PRINTF("%3d %3d\n", posX, posY);
-		}
-		if ((uint32_t)posY > 239) break;
-		uint32_t color = m_borderColor;
-		if ((uint32_t)posX > 159) continue; // outside the screen
-		if (posX > 15 && posX < 144 && posY > 23 && posY < 216)
-		{
-			uint8_t attrData = *(screenAddress(m_attributesMemOffset[posY] + ((posX - 16) >> 2))), pixelData = *(screenAddress(m_pixelsMemOffset[posY] + ((posX - 16) >> 2))) ^ m_colorInvertMask[(attrData >> 7) & (m_frameCounter >> 4) & 1],
-				bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
-			uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex];
-			fgColorMask = m_pixelBitMask[(pixelData >> (6 - ((posX & 3) << 1))) & 3];	bgColorMask = ~fgColorMask;
-			color = (fgColorMask & fgColor) | (bgColorMask & bgColor);
-		}
-		*pScreenBuffer++ = color;
+		posX = 0; ++posY;
 	}
-	m_pDisplayInstance->drawBuffer(buffSwitch, (pScreenBuffer - m_pScreenBuffer[buffSwitch]) * 2);
+	if (m_debugActvie)
+	{
+		DBG_PRINTF("%3d %3d\n", posX, posY);
+	}
+	if ((uint32_t)posY > 239) break;
+	uint32_t color = m_borderColor;
+	if ((uint32_t)posX > 159) continue; // outside the screen
+	if (posX > 15 && posX < 144 && posY > 23 && posY < 216)
+	{
+		uint8_t attrData = *(screenAddress(m_attributesMemOffset[posY] + ((posX - 16) >> 2))), pixelData = *(screenAddress(m_pixelsMemOffset[posY] + ((posX - 16) >> 2))) ^ m_colorInvertMask[(attrData >> 7) & (m_frameCounter >> 4) & 1],
+			bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
+		uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex];
+		fgColorMask = m_pixelBitMask[(pixelData >> (6 - ((posX & 3) << 1))) & 3];	bgColorMask = ~fgColorMask;
+		color = (fgColorMask & fgColor) | (bgColorMask & bgColor);
+	}
+	*pScreenBuffer++ = color;
+}
+m_pDisplayInstance->drawBuffer((pScreenBuffer - m_pScreenBuffer) * 2);
 }
 #else
 void ZXSpectrum::drawLine(int posY)
 {
-	int posX;
-	uint32_t* pScreenBuffer = m_pScreenBuffer;
 	uint8_t* pPixelData = screenAddress(m_pixelsMemOffset[posY]);
 	uint8_t* pAttrData = screenAddress(m_attributesMemOffset[posY]);
 	int flashAttr = (m_frameCounter >> 4) & 1;
+	uint32_t* pScreenBuffer = m_pScreenBuffer;
+	int posX;
 	struct BorderColors value;
 	for (posX = 0; posX < 4; posX++) // Left border
 	{
@@ -1774,8 +1791,22 @@ void ZXSpectrum::drawLine(int posY)
 		}
 		else
 		{
-			uint8_t attrData = *pAttrData++, pixelData = *pPixelData++ ^ m_colorInvertMask[(attrData >> 7) & flashAttr],
-					bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
+			uint8_t attrData, pixelData;
+			struct MemoryChange oldMem;
+			attrData = *pAttrData++;
+			pixelData = *pPixelData++ ^ m_colorInvertMask[(attrData >> 7) & flashAttr];
+			while(true)
+			{
+				if (!m_videoMemChange.getData(oldMem)) break;
+				if (posX - 4 == oldMem.x && posY / 8 == oldMem.y)
+				{
+					attrData = oldMem.value;
+					m_videoMemChange.completeGet();
+				}
+				else
+					break;
+			}
+			uint8_t	bgColorIndex = (attrData >> 3) & 0xF, fgColorIndex = (attrData & 7) | (bgColorIndex & 0x8);
 			uint32_t bgColorMask, bgColor = m_colorLookup[bgColorIndex], fgColorMask, fgColor = m_colorLookup[fgColorIndex];
 			fgColorMask = m_pixelBitMask[(pixelData >> 6) & 3];	bgColorMask = ~fgColorMask;
 			*pScreenBuffer++ = (fgColorMask & fgColor) | (bgColorMask & bgColor);

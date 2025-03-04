@@ -1,0 +1,37 @@
+Команда	Комментарий	Такт	Y	X
+  LD IX,nn     	" attributes for columns 14 and 15	"	15814	70	134
+  LD IY,nn     	" attributes for columns 22 and 23	"	15828	70	148
+  LD BC,nn     	" attributes for columns 8 and 9		"	15838	70	158
+  LD DE,nn     	 attributes for columns 10 and 11       	15848	70	168
+  LD HL,nn     	 attributes for columns 12 and 13       	15858	70	178
+"  EXX	       "	"              				"	15862	70	182
+  LD BC,nn     	 attributes for columns 16 and 17       	15872	70	192
+  LD DE,nn     	 attributes for columns 18 and 19       	15882	70	202
+  LD HL,nn     	 attributes for columns 0 and 1         	15892	70	212
+  LD A,(HL)    	" extra delay		                "	15899	70	219
+  LD (nn),HL   	" update columns 0 and 1			"	15920	71	16
+  LD HL,nn     	 attributes for columns 2 and 3         	15930	71	26
+  LD (nn),HL   	" update columns 2 and 3		        "	15952	71	48
+  LD HL,nn     	 attributes for columns 4 and 5         	15962	71	58
+  LD (nn),HL   	" update columns 4 and 5		        "	15984	71	80
+  LD HL,nn     	 attributes for columns 20 and 21       	15994	71	90
+  PUSH IY      	" update columns 22 and 23	        "	16016	71	112
+  PUSH HL      	 update columns 20 and 21               	16032	71	128
+  PUSH DE      	 update columns 18 and 19               	16043	71	139
+  PUSH BC      	 update columns 16 and 17               	16054	71	150
+"  EXX	       "	" 			                "	16058	71	154
+  PUSH IX      	 update columns 14 and 15               	16073	71	169
+  PUSH HL      	 update columns 12 and 13               	16084	71	180
+  PUSH DE      	 update columns 10 and 11               	16095	71	191
+  PUSH BC      	 update columns 8 and 9                 	16106	71	202
+  LD HL,nn     	 attributes for columns 6 and 7         	16116	71	212
+  PUSH HL      	 update columns 6 and 7                 	16127	71	223
+  LD SP,nn     	 reference columns 28 and 29            	16137	72	9
+  LD BC,nn     	 attributes for columns 24 and 25       	16147	72	19
+  LD DE,nn     	 attributes for columns 26 and 27       	16157	72	29
+  LD HL,nn     	 attributes for columns 28 and 29       	16167	72	39
+  PUSH HL      	 update columns 28 and 29               	16184	72	56
+  PUSH DE      	 update columns 26 and 27               	16200	72	72
+  PUSH BC      	 update columns 24 and 25               	16216	72	88
+  LD HL,nn     	 attributes for columns 30 and 31       	16226	72	98
+  LD (nn),HL   	 update columns 30 and 31               	16248	72	120

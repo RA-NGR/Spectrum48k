@@ -101,6 +101,14 @@ void loop()
 					case 'D':
 						DBG_PRINTF("Debug %s\n", (g_zxEmulator.toggleDebug() ? "On" : "Off"));
 						break;
+					//case '-':
+					//	g_zxEmulator.dOffset -= 1;
+					//	DBG_PRINTLN(g_zxEmulator.dOffset);
+					//	break;
+					//case '=':
+					//	g_zxEmulator.dOffset += 1;
+					//	DBG_PRINTLN(g_zxEmulator.dOffset);
+					//	break;
 					//case 'w':
 					//case 'W':
 					//{

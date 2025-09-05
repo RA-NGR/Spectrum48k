@@ -8,7 +8,7 @@ class Browser
 	Keyboard* m_pKeyboardInstance = NULL;
 	String m_currDir = "/";
 	String m_fileList;
-	String m_browserWindow[22];
+	String m_browserWindow[21];
 	int m_browseFrom, m_selectionPos, m_filesCount;
 	uint8_t bufferSwitch = 0;
 	String m_selectedFile = "";

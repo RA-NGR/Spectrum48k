@@ -1,4 +1,4 @@
-﻿#include "Common.h"
+#include "Common.h"
 #include "ZXSpectrum.h"
 #include "ZXPeripherals.h"
 #include "Browser.h"
@@ -202,9 +202,9 @@ void loop()
 			g_zxEmulator.resetZ80();
 		}
 		g_zxTape.fileName = g_cardBrowser.getSelectedFile();
-		rp2040.fifo.push(SET_VOL | g_cardBrowser.getSoundVolume());
 		g_mainDisplay.setAddrWindow(0, 0, 319, 239);
 		g_sysMode = systemMode::modeEmulator;
+		rp2040.fifo.push(SET_VOL | g_cardBrowser.getSoundVolume());
 	}
 }
 
@@ -218,7 +218,7 @@ void loop1()
 	uint32_t ctrlData = 0;
 	if (rp2040.fifo.pop_nb(&ctrlData))
 	{
-//		if (ctrlData && DRAW) g_mainDisplay.writeData16(ctrlData & 0x0000FFFF);
+//		if (ctrlData && SET_VOL) DBG_PRINTLN(ctrlData & 0x0000FFFF);
 		if (g_sysMode == modeEmulator) g_mainSpeaker.update(ctrlData);
 	}
 }

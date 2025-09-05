@@ -9,15 +9,15 @@ Sound::~Sound()
 
 bool Sound::init()
 {
-    float max_volume = float(AYEMU_MAX_AMP / 3.0f);	// As there are three channels.
-    float root_two = 1.414213562373095f;
-    for (int v = 0; v < 32; v++) table[v] = int(max_volume / powf(root_two, float(v ^ 0x1f) / 3.18f));
-    // Tie level 0 to silence.
-    for (int v = 31; v >= 0; --v) table[v] -= table[0];
-    cnt_a = cnt_b = cnt_c = cnt_n = cnt_e = 0;
-    bit_a = bit_b = bit_c = bit_n = 0;
-    env_pos = EnvNum = 0;
-    Cur_Seed = 0xffff;
+    //float max_volume = float(AYEMU_MAX_AMP / 3.0f);	// As there are three channels.
+    //float root_two = 1.414213562373095f;
+    //for (int v = 0; v < 32; v++) table[v] = int(max_volume / powf(root_two, float(v ^ 0x1f) / 3.18f));
+    //// Tie level 0 to silence.
+    //for (int v = 31; v >= 0; --v) table[v] -= table[0];
+    //cnt_a = cnt_b = cnt_c = cnt_n = cnt_e = 0;
+    //bit_a = bit_b = bit_c = bit_n = 0;
+    //env_pos = EnvNum = 0;
+    //Cur_Seed = 0xffff;
     m_pAlarmPool = alarm_pool_create_with_unused_hardware_alarm(1);
     gpio_set_function(SND_PIN, GPIO_FUNC_PWM);
     const int audio_pin_slice = pwm_gpio_to_slice_num(SND_PIN);
@@ -28,137 +28,137 @@ bool Sound::init()
     return true;
 }
 
-void Sound::reset()
-{
-    cnt_a = cnt_b = cnt_c = cnt_n = cnt_e = 0;
-    bit_a = bit_b = bit_c = bit_n = 0;
-    env_pos = EnvNum = 0;
+//void Sound::reset()
+//{
+//    cnt_a = cnt_b = cnt_c = cnt_n = cnt_e = 0;
+//    bit_a = bit_b = bit_c = bit_n = 0;
+//    env_pos = EnvNum = 0;
+//
+//    Cur_Seed = 0xffff;
+//    ChipTacts_per_outcount = 1750000 / 31250 / 8;
+//    Amp_Global = ChipTacts_per_outcount * (table[31] * 3) / AYEMU_MAX_AMP; // ???
+//    for (int i = 0; i < 16; i++) regs[i] = 0; // All registers are set to 0
+//    regs[7] = 0xff; // Mixer register
+//    for (selectedRegister = 0; selectedRegister < 16; selectedRegister++) updateRegisters();
+//    selectedRegister = 0xff;
+//}
 
-    Cur_Seed = 0xffff;
-    ChipTacts_per_outcount = 1750000 / 31250 / 8;
-    Amp_Global = ChipTacts_per_outcount * (table[31] * 3) / AYEMU_MAX_AMP; // ???
-    for (int i = 0; i < 16; i++) regs[i] = 0; // All registers are set to 0
-    regs[7] = 0xff; // Mixer register
-    for (selectedRegister = 0; selectedRegister < 16; selectedRegister++) updateRegisters();
-    selectedRegister = 0xff;
-}
-
-void Sound::updateRegisters()
-{
-    if (selectedRegister > 15) return;
-    switch (selectedRegister)
-    {
-    case 0: case 1:
-        ayregs.tone_a = regs[0] + ((regs[1] & 0x0F) << 8);
-        break;
-    case 2: case 3:
-        ayregs.tone_b = regs[2] + ((regs[3] & 0x0F) << 8);
-        break;
-    case 4: case 5:
-        ayregs.tone_c = regs[4] + ((regs[5] & 0x0F) << 8);
-        break;
-    case 6:
-        ayregs.noise = regs[6] & 0x1F;
-        break;
-    case 7:
-        ayregs.R7_tone_a = !(regs[7] & 0x01); ayregs.R7_tone_b = !(regs[7] & 0x02); ayregs.R7_tone_c = !(regs[7] & 0x04);
-        ayregs.R7_noise_a = !(regs[7] & 0x08); ayregs.R7_noise_b = !(regs[7] & 0x10); ayregs.R7_noise_c = !(regs[7] & 0x20);       
-        break;
-    case 8:
-        ayregs.vol_a = regs[8] & 0x0F; ayregs.env_a = regs[8] & 0x10;
-        break;
-    case 9:
-        ayregs.vol_b = regs[9] & 0x0F; ayregs.env_b = regs[9] & 0x10;
-        break;
-    case 10:
-        ayregs.vol_c = regs[10] & 0x0F;	ayregs.env_c = regs[10] & 0x10;
-        break;
-    case 11: case 12:
-        ayregs.env_freq = regs[11] + (regs[12] << 8);
-        break;
-    case 13:
-        ayregs.env_style = regs[13] & 0x0F; env_pos = cnt_e = 0;
-        break;
-    case 14:
-        ayregs.IOPortA = regs[14] & 0xFF;
-        break;
-    case 15:
-        ayregs.IOPortB = regs[15] & 0xff;
-        break;
-    default:
-        break;
-    }
-}
-
-uint16_t Sound::genSound(uint16_t tStates)
-{
-    // 8 times ?
-    uint16_t sample = 0;
-
-    for (int i = 0; i < 8; i++)
-    {
-        union AYData portData;
-        while (m_ayBuffer.getData(portData) && portData.data.tStates <= tStates)
-        {
-            if (!portData.data.port.isData) 
-                selectedRegister = portData.data.value;
-            else
-            {
-                regs[selectedRegister] = portData.data.value;
-                updateRegisters();
-            }
-            m_ayBuffer.completeGet(); 
-        }
-        int mix_l = 0;
-//        for (int m = 0; m < m_samplesPerOut; m++)
-        for (int m = 0; m < ChipTacts_per_outcount; m++)
-        {
-            if (++cnt_a >= ayregs.tone_a)
-            {
-                cnt_a = 0; bit_a = !bit_a;
-            }
-            if (++cnt_b >= ayregs.tone_b)
-            {
-                cnt_b = 0; bit_b = !bit_b;
-            }
-            if (++cnt_c >= ayregs.tone_c)
-            {
-                cnt_c = 0; bit_c = !bit_c;
-            }
-            if (++cnt_n >= (ayregs.noise * 2))
-            {
-                cnt_n = 0; Cur_Seed = (Cur_Seed * 2 + 1) ^ (((Cur_Seed >> 16) ^ (Cur_Seed >> 13)) & 1);
-                bit_n = ((Cur_Seed >> 16) & 1);
-            }
-            if (++cnt_e >= ayregs.env_freq)
-            {
-                cnt_e = 0;
-                if (++env_pos > 127) env_pos = 64;
-            }
-#define ENVVOL Envelope[ayregs.env_style][env_pos]
-            int tmpvol;
-
-            if ((bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a))
-            {
-                tmpvol = (ayregs.env_a) ? ENVVOL : Rampa_AY_table[ayregs.vol_a];
-                mix_l += table[tmpvol];
-            }
-            if ((bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b))
-            {
-                tmpvol = (ayregs.env_b) ? ENVVOL : Rampa_AY_table[ayregs.vol_b];
-                mix_l += table[tmpvol];
-            }
-            if ((bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c))
-            {
-                tmpvol = (ayregs.env_c) ? ENVVOL : Rampa_AY_table[ayregs.vol_c];
-                mix_l += table[tmpvol];
-            }
-        }
-        tStates += 2;
-        sample += mix_l / Amp_Global;
-    }
-    return sample / 8;
-}
+//void Sound::updateRegisters()
+//{
+//    if (selectedRegister > 15) return;
+//    switch (selectedRegister)
+//    {
+//    case 0: case 1:
+//        ayregs.tone_a = regs[0] + ((regs[1] & 0x0F) << 8);
+//        break;
+//    case 2: case 3:
+//        ayregs.tone_b = regs[2] + ((regs[3] & 0x0F) << 8);
+//        break;
+//    case 4: case 5:
+//        ayregs.tone_c = regs[4] + ((regs[5] & 0x0F) << 8);
+//        break;
+//    case 6:
+//        ayregs.noise = regs[6] & 0x1F;
+//        break;
+//    case 7:
+//        ayregs.R7_tone_a = !(regs[7] & 0x01); ayregs.R7_tone_b = !(regs[7] & 0x02); ayregs.R7_tone_c = !(regs[7] & 0x04);
+//        ayregs.R7_noise_a = !(regs[7] & 0x08); ayregs.R7_noise_b = !(regs[7] & 0x10); ayregs.R7_noise_c = !(regs[7] & 0x20);       
+//        break;
+//    case 8:
+//        ayregs.vol_a = regs[8] & 0x0F; ayregs.env_a = regs[8] & 0x10;
+//        break;
+//    case 9:
+//        ayregs.vol_b = regs[9] & 0x0F; ayregs.env_b = regs[9] & 0x10;
+//        break;
+//    case 10:
+//        ayregs.vol_c = regs[10] & 0x0F;	ayregs.env_c = regs[10] & 0x10;
+//        break;
+//    case 11: case 12:
+//        ayregs.env_freq = regs[11] + (regs[12] << 8);
+//        break;
+//    case 13:
+//        ayregs.env_style = regs[13] & 0x0F; env_pos = cnt_e = 0;
+//        break;
+//    case 14:
+//        ayregs.IOPortA = regs[14] & 0xFF;
+//        break;
+//    case 15:
+//        ayregs.IOPortB = regs[15] & 0xff;
+//        break;
+//    default:
+//        break;
+//    }
+//}
+//
+//uint16_t Sound::genSound(uint16_t tStates)
+//{
+//    // 8 times ?
+//    uint16_t sample = 0;
+//
+//    for (int i = 0; i < 8; i++)
+//    {
+//        union AYData portData;
+//        while (m_ayBuffer.getData(portData) && portData.data.tStates <= tStates)
+//        {
+//            if (!portData.data.port.isData) 
+//                selectedRegister = portData.data.value;
+//            else
+//            {
+//                regs[selectedRegister] = portData.data.value;
+//                updateRegisters();
+//            }
+//            m_ayBuffer.completeGet(); 
+//        }
+//        int mix_l = 0;
+////        for (int m = 0; m < m_samplesPerOut; m++)
+//        for (int m = 0; m < ChipTacts_per_outcount; m++)
+//        {
+//            if (++cnt_a >= ayregs.tone_a)
+//            {
+//                cnt_a = 0; bit_a = !bit_a;
+//            }
+//            if (++cnt_b >= ayregs.tone_b)
+//            {
+//                cnt_b = 0; bit_b = !bit_b;
+//            }
+//            if (++cnt_c >= ayregs.tone_c)
+//            {
+//                cnt_c = 0; bit_c = !bit_c;
+//            }
+//            if (++cnt_n >= (ayregs.noise * 2))
+//            {
+//                cnt_n = 0; Cur_Seed = (Cur_Seed * 2 + 1) ^ (((Cur_Seed >> 16) ^ (Cur_Seed >> 13)) & 1);
+//                bit_n = ((Cur_Seed >> 16) & 1);
+//            }
+//            if (++cnt_e >= ayregs.env_freq)
+//            {
+//                cnt_e = 0;
+//                if (++env_pos > 127) env_pos = 64;
+//            }
+//#define ENVVOL Envelope[ayregs.env_style][env_pos]
+//            int tmpvol;
+//
+//            if ((bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a))
+//            {
+//                tmpvol = (ayregs.env_a) ? ENVVOL : Rampa_AY_table[ayregs.vol_a];
+//                mix_l += table[tmpvol];
+//            }
+//            if ((bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b))
+//            {
+//                tmpvol = (ayregs.env_b) ? ENVVOL : Rampa_AY_table[ayregs.vol_b];
+//                mix_l += table[tmpvol];
+//            }
+//            if ((bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c))
+//            {
+//                tmpvol = (ayregs.env_c) ? ENVVOL : Rampa_AY_table[ayregs.vol_c];
+//                mix_l += table[tmpvol];
+//            }
+//        }
+//        tStates += 2;
+//        sample += mix_l / Amp_Global;
+//    }
+//    return sample / 8;
+//}
 
 void Sound::update(uint32_t ctrlData)
 {
@@ -166,7 +166,7 @@ void Sound::update(uint32_t ctrlData)
         if ((ctrlData & 0xFFFFFFFE) == RESET)
         {
             m_samplesPerLoop = 4368 - 636 * (ctrlData & 1); m_samplesPerOut = 7 - (ctrlData & 1); m_enableAY = (ctrlData & 1); // Beeper init
-            reset();
+//            reset();
             m_currBuff = 0; 
         }
         if (ctrlData & START_FRAME) alarm_pool_add_repeating_timer_us(m_pAlarmPool, -32, onTimer, this, &m_clockTimer);
@@ -181,9 +181,9 @@ void Sound::update(uint32_t ctrlData)
                 //}
                 //else
                 //    selectedRegister = (ctrlData >> 16) & 0x0000000F;
-                union AYData data;
-                data.raw = ctrlData; // & ~WR_PORT
-                m_ayBuffer.putData(data);
+                //union AYData data;
+                //data.raw = ctrlData; // & ~WR_PORT
+                //m_ayBuffer.putData(data);
             }
             else
             {

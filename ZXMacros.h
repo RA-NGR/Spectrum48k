@@ -77,6 +77,7 @@
 //#define contendedAccess(address, time)                  { if (m_pageContended[address >> 14] && m_Z80Processor.tCount >= m_emulSettings.contentionStart && m_Z80Processor.tCount <= m_emulSettings.contentionEnd) m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine]; m_Z80Processor.tCount += (time); }
 //#define contendedAccess(address, time)                  processULA(address, time)
 #define contendedAccess(address, time)                  drawFunc(*this, time, m_pageContended[(address) >> 14]);
+//#define contendedAccess(address, time)                  { m_Z80Processor.tCount += (time); }
 
 #define AND(value)                                      { A &= (value); FL = FLAG_H | sz53pTable[A]; Q = FL; }
 #define ADC(value)                                      { uint16_t adctemp = A + (value) + ( FL & FLAG_C ); uint8_t lookup = ((A & 0x88) >> 3) | (((value) & 0x88) >> 2) | ((adctemp & 0x88) >> 1); \

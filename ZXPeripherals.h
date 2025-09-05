@@ -93,8 +93,8 @@ class Sound
 	struct repeating_timer m_clockTimer;
 	int m_cyclesDone = 0;
 	int m_samplesPerLoop;
-	uint16_t m_soundVol = 255;
-//	float m_soundVol;
+//	uint16_t m_soundVol = 255;
+	float m_soundVol = 100.0;
 	uint8_t m_samplesPerOut;
 	uint8_t m_prevBit;
 	bool m_enableAY;
@@ -127,7 +127,7 @@ private:
 	uint8_t m_portScanIdx = 0;
 	uint8_t m_portData[10];
 	void writeReg(uint8_t reg, uint8_t data);
-	uint8_t readKeys();
+	uint8_t readKeys(); 
 	static bool onTimer(struct repeating_timer* timer);
 };
 

@@ -190,7 +190,7 @@ void Sound::update(uint32_t ctrlData)
                 m_beeprBuffer.putData(ctrlData & 0x0000FFFF);
             }
         }
-        if (ctrlData & SET_VOL) m_soundVol = (ctrlData & 0x0000FFFF);// == 0 ? 0 : (ctrlData & 0x0000FFFF) * 64 - 1;
+        if (ctrlData & SET_VOL) m_soundVol = (ctrlData & 0x0000FFFF) * 0.25;// == 0 ? 0 : (ctrlData & 0x0000FFFF) * 64 - 1;
         //if (ctrlData & STOP_FRAME)
         //{
         //    uint16_t soundBit = m_prevBit, sample;
@@ -244,7 +244,8 @@ bool Sound::onTimer(struct repeating_timer* pTimer)
     //}
     //if (sample > 255) sample = 255;
     sample /= pInstance->m_samplesPerOut;
-    sample /= 4; sample *= pInstance->m_soundVol; // Set global volume
+    //sample /= 4; 
+    sample *= pInstance->m_soundVol; // Set global volume
     pwm_set_gpio_level(SND_PIN, sample);
     if (pInstance->m_cyclesDone < pInstance->m_samplesPerLoop) return true;
     pInstance->m_cyclesDone -= (pInstance->m_samplesPerLoop);

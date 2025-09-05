@@ -34,8 +34,8 @@ struct
 
 void setup()
 {
-//	vreg_set_voltage(VREG_VOLTAGE_1_15);
-//	set_sys_clock_khz(250000, true);
+	vreg_set_voltage(VREG_VOLTAGE_1_15);
+	set_sys_clock_khz(264000, false);
 #if defined(DBG)
 	Serial.begin(115200);
 	delay(1000);
@@ -95,7 +95,7 @@ void loop()
 						emulTime = g_zxEmulator.getEmulationTime();
 						maxTime = g_zxEmulator.getMaxEmulationTime();
 						DBG_PRINTF("Free mem: %6d, ", rp2040.getFreeHeap());
-						DBG_PRINTF("Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
+						DBG_PRINTF("Core clock: %d, Core temp: %.2f'C, FPS: %3.1f (min: %3.1f)\n", clock_get_hz(clk_sys), analogReadTemp(), 1000000.0 / emulTime, 1000000.0 / maxTime);
 						break;
 					case 'd': // For debug purposes
 					case 'D':

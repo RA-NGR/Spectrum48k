@@ -1379,6 +1379,9 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 	m_emulSettings.borderStart = (!is128 ? m_emulSettings.contentionStart + 1 - BORDER_SHIFT - 24 * m_emulSettings.tStatesPerLine: 
 								  m_emulSettings.contentionStart + 1 - BORDER_SHIFT - 24 * m_emulSettings.tStatesPerLine);
 	m_emulSettings.borderEnd = m_emulSettings.borderStart + 240 * m_emulSettings.tStatesPerLine;
+	//m_emulSettings.borderStart = (!is128 ? m_emulSettings.contentionStart + 1 - 24 * m_emulSettings.tStatesPerLine :
+	//							  m_emulSettings.contentionStart + 1 - 24 * m_emulSettings.tStatesPerLine);
+	//m_emulSettings.borderEnd = m_emulSettings.borderStartOld + 240 * m_emulSettings.tStatesPerLine;
 	DBG_PRINTF("Border: %d - %d\n", m_emulSettings.borderStart, m_emulSettings.borderEnd);
 	m_emulSettings.audioStatesDivider = (!is128 ? 16 : 19);
 	if (!is128)
@@ -1506,16 +1509,16 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 					setMemPageAddr(3, m_pRAMBanks[m_outPort7FFD.page]); m_pageContended[3] = m_outPort7FFD.page & 1 ? true : false;
 				}
 			}
-			if ((port & 0xC002) == 0xC000) // AY port
-			{
-				m_outPortFFFD = data; 
-				rp2040.fifo.push_nb(WR_PORT | AY_PORT | data << 16 | (m_Z80Processor.tCount / m_emulSettings.audioStatesDivider) & 0x00007FFF);
-			}
-			if ((port & 0xC002) == 0x8000) // AY port
-			{
-				m_virtualRegsAY[m_outPortFFFD & 0x0F] = data; 
-				rp2040.fifo.push_nb(WR_PORT | AY_PORT | AY_DATA | data << 16 | (m_Z80Processor.tCount / m_emulSettings.audioStatesDivider) & 0x00007FFF);
-			}
+			//if ((port & 0xC002) == 0xC000) // AY port
+			//{
+			//	m_outPortFFFD = data; 
+			//	rp2040.fifo.push_nb(WR_PORT | AY_PORT | data << 16 | (m_Z80Processor.tCount / m_emulSettings.audioStatesDivider) & 0x00007FFF);
+			//}
+			//if ((port & 0xC002) == 0x8000) // AY port
+			//{
+			//	m_virtualRegsAY[m_outPortFFFD & 0x0F] = data; 
+			//	rp2040.fifo.push_nb(WR_PORT | AY_PORT | AY_DATA | data << 16 | (m_Z80Processor.tCount / m_emulSettings.audioStatesDivider) & 0x00007FFF);
+			//}
 		}
 		if (m_pageContended[port >> 14])
 		{
@@ -1545,13 +1548,16 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 			contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 0);
 		}
 		else
-		{
 			m_Z80Processor.tCount += 2;
-			retVal = unattachedPort();
-		}
-		if (m_emulSettings.emulSettins.machineType && (port & 0xC002) == 0xC000) // AY port
+		retVal = unattachedPort();
+		if (m_emulSettings.emulSettins.machineType)
 		{
-			retVal = m_virtualRegsAY[m_outPortFFFD & 0x0F];
+			// Reads from port 0x7ffd cause a crash, as the 128's HAL10H8 chip does not distinguish between reads and writes to this port, resulting in a floating data bus being used to set the paging registers.
+			if ((port & 0x8002) == 0) writePort(port, retVal);
+			//if ((port & 0xC002) == 0xC000) // AY port
+			//{
+			//	retVal = m_virtualRegsAY[m_outPortFFFD & 0x0F];
+			//}
 		}
 		if ((port & 0x00E0) == 0x00) retVal = m_pInPorts[8]; // Joystic port
 	}
@@ -1729,7 +1735,7 @@ void drawTopBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended)
 {
 	if (rInstance.m_Z80Processor.tCount >= rInstance.m_emulSettings.borderStart)
 	{
-		rInstance.m_lastBorderTState = rInstance.m_emulSettings.borderStart;
+		rInstance.m_lastDrawnTState = rInstance.m_emulSettings.borderStart;
 		rInstance.drawFunc = drawTopBorder;
 		rInstance.drawFunc(rInstance, tStates, isContended);
 		return;
@@ -1741,12 +1747,12 @@ void drawTopBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended)
 {
 	if (rInstance.m_Z80Processor.tCount >= rInstance.m_emulSettings.contentionStart)
 	{
-		rInstance.m_lastScreenTState = rInstance.m_emulSettings.contentionStart;
+		rInstance.m_lastDrawnTState = rInstance.m_emulSettings.contentionStart;
 		rInstance.drawFunc = drawScreen;
 		rInstance.drawFunc(rInstance, tStates, isContended);
 		return;
 	}
-	//*rInstance.m_pDrawBuffer++ = rInstance.m_colorLookup[rInstance.m_outPortFE.borderColor];
+	//for(; rInstance.m_lastDrawnTState < rInstance.m_Z80Processor.tCount; rInstance.m_lastDrawnTState++) *rInstance.m_pDrawBuffer++ = rInstance.m_colorLookup[rInstance.m_outPortFE.borderColor];
 	rInstance.m_Z80Processor.tCount += tStates;
 }
 

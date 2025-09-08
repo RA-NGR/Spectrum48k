@@ -324,7 +324,8 @@ private:
 	//friend void drawBottomBorder(ZXSpectrum* pInstance, int32_t tStates, bool isContended);
 	//friend void drawBottomBlank(ZXSpectrum* pInstance, int32_t tStates, bool isContended);
 	uint32_t* m_pDrawBuffer, *m_pDrawBufferEnd;
-	int32_t m_lastBorderTState, m_lastScreenTState;
+	int32_t m_lastDrawnTState;
+	//int32_t m_lastBorderTState, m_lastScreenTState;
 	// Processor
 	typedef union
 	{
@@ -412,6 +413,7 @@ private:
 			uint8_t unused : 2;
 		};
 		uint8_t rawData;
+		uint8_t lastData;
 	} m_outPort7FFD;
 	uint8_t m_outPortFFFD;
 	uint8_t m_virtualRegsAY[16];
@@ -490,6 +492,8 @@ private:
 		int32_t contentionEnd;
 		int32_t borderStart;
 		int32_t borderEnd;
+		//int32_t borderStart;
+		//int32_t borderEnd;
 		int32_t audioStatesDivider;
 		union 
 		{

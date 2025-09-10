@@ -26,7 +26,7 @@
 #define SND_PIN  22		/* Sound pin */
 //#define PIO_CLK_DIV   3
 //#define PIO_CLK_FRACT 76
-#define PIO_CLK_DIV_F 5//3.5
+#define PIO_CLK_DIV_F 4//3.5
 //#define TFT_REFRESHRATE 0x10 /* 119 Hz */
 //#define TFT_REFRESHRATE 0x11 /* 112 Hz */
 //#define TFT_REFRESHRATE 0x12 /* 106 Hz */

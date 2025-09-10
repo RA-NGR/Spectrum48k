@@ -76,11 +76,9 @@ void ZXSpectrum::stepZ80()
 		repeatLoop = false;
 		switch (instruction)
 		{
-		case ADD_HL_RR:						/*!*/
+		case ADD_HL_RR:						/*+*/
 		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			//contendedAccess(IR, 7);
+			contendedAccessLoop(IR, 7);
 			ADD16((*(uint16_t*)(pPairs[HL_IX_IY_INDEX])), (*(uint16_t*)(pPairs[dd(opcode)])));
 			break;
 		}
@@ -92,9 +90,7 @@ void ZXSpectrum::stepZ80()
 				if (pRegisters != m_Z80Processor.pRegisters)
 				{
 					uint8_t offset = readMem(PC);
-					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-					contendedAccess(PC, 1);
-					//contendedAccess(PC, 5);
+					contendedAccessLoop(PC, 5);
 					PC++;
 					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
 					bytetemp = readMem(m_Z80Processor.memptr.w);
@@ -114,9 +110,9 @@ void ZXSpectrum::stepZ80()
 				DEC8((*(uint8_t*)(pRegisters[r(opcode)])));
 			break;
 		}
-		case DEC_RR:						/*!*/
+		case DEC_RR:						/*+*/
 		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1);
+			contendedAccessLoop(IR, 2);
 			(*(uint16_t*)(pPairs[dd(opcode)]))--;
 			break;
 		}
@@ -127,7 +123,7 @@ void ZXSpectrum::stepZ80()
 			contendedAccess(SP + 1, 1);
 			writeMem(SP + 1, (*(uint8_t*)(pRegisters[H_INDEX])));
 			writeMem(SP, (*(uint8_t*)(pRegisters[L_INDEX])));
-			contendedAccess(SP, 1); contendedAccess(SP, 1);
+			contendedAccessLoop(SP, 2);
 			(*(uint8_t*)(pRegisters[L_INDEX])) = m_Z80Processor.memptr.b.l = bytetempl;
 			(*(uint8_t*)(pRegisters[H_INDEX])) = m_Z80Processor.memptr.b.h = bytetemph;
 			break;
@@ -140,8 +136,7 @@ void ZXSpectrum::stepZ80()
 				if (pRegisters != m_Z80Processor.pRegisters)
 				{
 					uint8_t offset = readMem(PC);
-					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-					contendedAccess(PC, 1);
+					contendedAccessLoop(PC, 5);
 					PC++;
 					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
 					bytetemp = readMem(m_Z80Processor.memptr.w);
@@ -161,9 +156,9 @@ void ZXSpectrum::stepZ80()
 				INC8((*(uint8_t*)(pRegisters[r(opcode)])));
 			break;
 		}
-		case INC_RR:						/*!*/
+		case INC_RR:						/*+*/
 		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1);
+			contendedAccessLoop(IR, 2);
 			(*(uint16_t*)(pPairs[dd(opcode)]))++;
 			break;
 		}
@@ -183,7 +178,7 @@ void ZXSpectrum::stepZ80()
 			{
 				uint8_t offset = readMem(PC++);
 				uint8_t value = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1);
+				contendedAccessLoop(PC, 2);
 				PC++;
 				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
 				writeMem(m_Z80Processor.memptr.w, value);
@@ -202,8 +197,7 @@ void ZXSpectrum::stepZ80()
 			if (pRegisters != m_Z80Processor.pRegisters)
 			{
 				uint8_t offset = readMem(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-				contendedAccess(PC, 1);
+				contendedAccessLoop(PC, 5);
 				PC++;
 				m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
 				writeMem(m_Z80Processor.memptr.w, (*(uint8_t*)(m_Z80Processor.pRegisters[r_(opcode)])));
@@ -224,8 +218,7 @@ void ZXSpectrum::stepZ80()
 				if (pRegisters != m_Z80Processor.pRegisters)
 				{
 					uint8_t offset = readMem(PC);
-					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-					contendedAccess(PC, 1);
+					contendedAccessLoop(PC, 5);
 					PC++;
 					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
 					(*(uint8_t*)(m_Z80Processor.pRegisters[r(opcode)])) = readMem(m_Z80Processor.memptr.w);
@@ -245,7 +238,7 @@ void ZXSpectrum::stepZ80()
 		}
 		case LD_SP_HL:						/*!*/
 		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1);
+			contendedAccessLoop(IR, 2);
 			SP = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX]));
 			break;
 		}
@@ -273,8 +266,7 @@ void ZXSpectrum::stepZ80()
 				if (pRegisters != m_Z80Processor.pRegisters)
 				{
 					uint8_t offset = readMem(PC);
-					contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1); contendedAccess(PC, 1);
-					contendedAccess(PC, 1);
+					contendedAccessLoop(PC, 5);
 					PC++;
 					m_Z80Processor.memptr.w = (*(uint16_t*)(pPairs[HL_IX_IY_INDEX])) + (int8_t)offset;
 					bytetemp = readMem(m_Z80Processor.memptr.w);
@@ -469,7 +461,7 @@ void ZXSpectrum::stepZ80()
 			uint8_t bytetemp = readMem(HL);
 			BC--;
 			writeMem(DE, bytetemp);
-			contendedAccess(DE, 1); contendedAccess(DE, 1);
+			contendedAccessLoop(DE, 2);
 			if (opcode == 0xA0)
 			{
 				DE++; HL++;
@@ -487,15 +479,14 @@ void ZXSpectrum::stepZ80()
 		{
 			uint8_t bytetemp = readMem(HL);
 			writeMem(DE, bytetemp);
-			contendedAccess(DE, 1); contendedAccess(DE, 1);
+			contendedAccessLoop(DE, 2);
 			BC--;
 			bytetemp += A;
 			FL = (FL & (FLAG_C | FLAG_Z | FLAG_S)) | (BC ? FLAG_V : 0);
 			if (BC)
 			{
 				FL |= (PCH & (FLAG_3 | FLAG_5));
-				contendedAccess(DE, 1); contendedAccess(DE, 1); contendedAccess(DE, 1); contendedAccess(DE, 1);
-				contendedAccess(DE, 1);
+				contendedAccessLoop(DE, 5);
 				PC -= 2;
 				m_Z80Processor.memptr.w = PC + 1;
 			}
@@ -515,8 +506,7 @@ void ZXSpectrum::stepZ80()
 		case CPI_CPD:
 		{
 			uint8_t value = readMem(HL), bytetemp = A - value, lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
-			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
-			contendedAccess(HL, 1);
+			contendedAccessLoop(HL, 5);
 			if (opcode == 0xA1)
 			{
 				HL++;
@@ -537,8 +527,7 @@ void ZXSpectrum::stepZ80()
 		case CPIR_CPDR: /* Test passed*/
 		{
 			uint8_t value = readMem(HL), bytetemp = A - value, lookup = ((A & 0x08) >> 3) | (((value) & 0x08) >> 2) | ((bytetemp & 0x08) >> 1);
-			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
-			contendedAccess(HL, 1);
+			contendedAccessLoop(HL, 5);
 			BC--;
 			FL = (FL & FLAG_C) | (BC ? (FLAG_V | FLAG_N) : FLAG_N) | halfcarrySubTable[lookup] | (bytetemp ? 0 : FLAG_Z) | (bytetemp & FLAG_S);
 			if (FL & FLAG_H) bytetemp--;
@@ -549,8 +538,7 @@ void ZXSpectrum::stepZ80()
 			Q = FL;
 			if ((FL & (FLAG_V | FLAG_Z)) == FLAG_V)
 			{
-				contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
-				contendedAccess(HL, 1);
+				contendedAccessLoop(HL, 5);
 				PC -= 2;
 				m_Z80Processor.memptr.w = PC + 1;
 			}
@@ -619,16 +607,14 @@ void ZXSpectrum::stepZ80()
 		}
 		case ADC_HL_RR:
 		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
+			contendedAccessLoop(IR, 7);
 			ADC16((*(uint16_t*)(pPairs[dd(opcode)])));
 			break;
 			break;
 		}
 		case SBC_HL_RR:
 		{
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
-			contendedAccess(IR, 1); contendedAccess(IR, 1); contendedAccess(IR, 1);
+			contendedAccessLoop(IR, 7);
 			SBC16((*(uint16_t*)(pPairs[dd(opcode)])));
 			break;
 		}
@@ -944,7 +930,7 @@ void ZXSpectrum::stepZ80()
 		case RLD_RRD:
 		{
 			uint8_t bytetemp = readMem(HL);
-			contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
+			contendedAccessLoop(HL, 4);
 			if (opcode == 0x6F)
 			{
 				writeMem(HL, (bytetemp << 4) | (A & 0x0F));
@@ -1047,8 +1033,7 @@ void ZXSpectrum::stepZ80()
 		case DJNZ_E:
 		{
 			contendedAccess(IR, 1);
-			B--;
-			if (B)
+			if (--B)
 			{
 				JR();
 			}
@@ -1155,8 +1140,7 @@ void ZXSpectrum::stepZ80()
 			FL = (initemp & 0x80 ? FLAG_N : 0);
 			if (B)
 			{
-				contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1); contendedAccess(HL, 1);
-				contendedAccess(HL, 1);
+				contendedAccessLoop(HL, 5); 
 				PC -= 2;
 				FL |= ((B & FLAG_S) | (PCH & (FLAG_3 | FLAG_5)) | (initemp2 < initemp ? FLAG_C | (initemp & 0x80 ? ((B & 0x0F) == 0 ? FLAG_H : 0) | parityTable[((initemp2 & 0x07) ^ B) ^
 					((B - 1) & 7)] : ((B & 0xF) == 0xF ? FLAG_H : 0) | parityTable[((initemp2 & 0x07) ^ B) ^ ((B + 1) & 7)]) : parityTable[((initemp2 & 0x07) ^ B) ^ (B & 7)]));
@@ -1230,8 +1214,7 @@ void ZXSpectrum::stepZ80()
 			FL = (outitemp & 0x80 ? FLAG_N : 0);
 			if (B)
 			{
-				contendedAccess(BC, 1); contendedAccess(BC, 1); contendedAccess(BC, 1); contendedAccess(BC, 1);
-				contendedAccess(BC, 1);
+				contendedAccessLoop(BC, 5); 
 				PC -= 2;
 				FL |= ((B & FLAG_S) | (PCH & (FLAG_3 | FLAG_5)) | (outitemp2 < outitemp ? FLAG_C | (outitemp & 0x80 ? ((B & 0x0F) == 0 ? FLAG_H : 0) | parityTable[((outitemp2 & 0x07) ^ B) ^
 					((B - 1) & 7)] : ((B & 0xF) == 0xF ? FLAG_H : 0) | parityTable[((outitemp2 & 0x07) ^ B) ^ ((B + 1) & 7)]) : parityTable[((outitemp2 & 0x07) ^ B) ^ (B & 7)]));
@@ -1251,7 +1234,7 @@ void ZXSpectrum::stepZ80()
 				PC++;
 				contendedAccess(PC, 3);
 				opcode = *memoryAddress(PC);
-				contendedAccess(PC, 1); contendedAccess(PC, 1);
+				contendedAccessLoop(PC, 2);
 			}
 			else
 			{
@@ -1314,9 +1297,10 @@ void ZXSpectrum::resetZ80()
 	m_borderColor = m_colorLookup[7];
 	AF = AF_ = 0xffff;
 	SP = 0xffff;
-	m_maxEmulTime = 0;
+	m_maxEmulTime = 0; 
+	m_drawStage = TopBlank;
 	m_virtualRegsAY[m_outPortFFFD & 0x0F] = { 0 }; m_virtualRegsAY[7] = 0xFD; m_virtualRegsAY[14] = 0xFF;
-	drawFunc = drawTopBlank; m_pDrawBuffer = m_pScreenBuffer;
+//	DBG_PRINTLN(rp2040.cpuid());
 	rp2040.fifo.push(RESET | m_emulSettings.emulSettins.machineType);
 } 
 // Tape 
@@ -1382,12 +1366,13 @@ void ZXSpectrum::startTape(File* pFile, uint16_t sectionSize)
 	//m_emulSettings.borderStart = (!is128 ? m_emulSettings.contentionStart + 1 - 24 * m_emulSettings.tStatesPerLine :
 	//							  m_emulSettings.contentionStart + 1 - 24 * m_emulSettings.tStatesPerLine);
 	//m_emulSettings.borderEnd = m_emulSettings.borderStartOld + 240 * m_emulSettings.tStatesPerLine;
-	DBG_PRINTF("Border: %d - %d\n", m_emulSettings.borderStart, m_emulSettings.borderEnd);
 	m_emulSettings.audioStatesDivider = (!is128 ? 16 : 19);
 	if (!is128)
 		setMemPageAddr(0, (uint8_t*)zx48ROM);
+//		setMemPageAddr(0, (uint8_t*)zxTestROM);
 	else
 		setMemPageAddr(0, (uint8_t*)zx128ROM0);
+//		setMemPageAddr(0, (uint8_t*)zxTestROM);
 	m_pageContended[0] = false;
 	setMemPageAddr(1, m_pRAMBanks[5]); m_pageContended[1] = true;
 	setMemPageAddr(2, m_pRAMBanks[2]); m_pageContended[2] = false;
@@ -1506,6 +1491,7 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 				{
 					m_outPort7FFD.rawData = data;
 					setMemPageAddr(0, (uint8_t*)(m_outPort7FFD.rom ? zx128ROM1 : zx128ROM0));
+//					setMemPageAddr(0, (uint8_t*)(m_outPort7FFD.rom ? zxTestROM : zxTestROM));
 					setMemPageAddr(3, m_pRAMBanks[m_outPort7FFD.page]); m_pageContended[3] = m_outPort7FFD.page & 1 ? true : false;
 				}
 			}
@@ -1522,7 +1508,8 @@ void ZXSpectrum::writePort(uint16_t port, uint8_t data)
 		}
 		if (m_pageContended[port >> 14])
 		{
-			contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 0);
+			contendedAccessLoop(CONTENDED, 2);
+			contendedAccess(CONTENDED, 0);
 		}
 		else
 			m_Z80Processor.tCount += 2;
@@ -1545,7 +1532,7 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 	{
 		if (m_pageContended[port >> 14])
 		{
-			contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 1); contendedAccess(CONTENDED, 0);
+			contendedAccessLoop(CONTENDED, 2); contendedAccess(CONTENDED, 0);
 		}
 		else
 			m_Z80Processor.tCount += 2;
@@ -1553,7 +1540,12 @@ uint8_t ZXSpectrum::readPort(uint16_t port)
 		if (m_emulSettings.emulSettins.machineType)
 		{
 			// Reads from port 0x7ffd cause a crash, as the 128's HAL10H8 chip does not distinguish between reads and writes to this port, resulting in a floating data bus being used to set the paging registers.
-			if ((port & 0x8002) == 0) writePort(port, retVal);
+			if ((port & 0x0001) && (port & 0x8002) == 0 && (!m_outPort7FFD.disabled))
+			{
+				m_outPort7FFD.rawData = retVal;
+				setMemPageAddr(0, (uint8_t*)(m_outPort7FFD.rom ? zx128ROM1 : zx128ROM0));
+				setMemPageAddr(3, m_pRAMBanks[m_outPort7FFD.page]); m_pageContended[3] = m_outPort7FFD.page & 1 ? true : false;
+			}
 			//if ((port & 0xC002) == 0xC000) // AY port
 			//{
 			//	retVal = m_virtualRegsAY[m_outPortFFFD & 0x0F];
@@ -1607,7 +1599,7 @@ void ZXSpectrum::loopZ80()
 			m_ZXTape.stateCycles -= usedCycles; if (m_ZXTape.stateCycles <= 0) processTape();
 		}
 	}
-	rp2040.fifo.push_nb(STOP_FRAME); drawFunc = drawTopBlank; m_pDrawBuffer = m_pScreenBuffer;
+	rp2040.fifo.push_nb(STOP_FRAME); m_drawStage = TopBlank;
 	m_Z80Processor.tCount -= m_emulSettings.tStatesPerLoop;
 	m_frameCounter = (++m_frameCounter) & 0x1F;
 	m_emulationTime = micros() - startTime;
@@ -1680,7 +1672,7 @@ void ZXSpectrum::init(Display* pDisplayInstance, Keyboard* pKeyboardInstance)
 	int i;
 	m_emulSettings.emulSettins.machineType = 0;
 	m_pDisplayInstance = pDisplayInstance;
-	m_pScreenBuffer = (uint32_t*)m_pDisplayInstance->getBuffer(); m_pDrawBufferEnd = m_pScreenBuffer + 160;
+	m_pScreenBuffer = (uint32_t*)m_pDisplayInstance->getBuffer();// m_pDrawBufferEnd = m_pScreenBuffer + 320;
 	for (i = 0; i < 8; i++)
 	{
 		if ((m_pRAMBanks[i] = (uint8_t*)malloc(16384)) == NULL)
@@ -1731,127 +1723,148 @@ bool ZXSpectrum::toggleDebug()
 	m_debugActvie = !m_debugActvie; 
 	return m_debugActvie; 
 }
-void drawTopBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended)
+
+
+void ZXSpectrum::drawFunc(int32_t tStates, bool isContended)
 {
-	if (rInstance.m_Z80Processor.tCount >= rInstance.m_emulSettings.borderStart)
+	switch (m_drawStage)
 	{
-		rInstance.m_lastDrawnTState = rInstance.m_emulSettings.borderStart;
-		rInstance.drawFunc = drawTopBorder;
-		rInstance.drawFunc(rInstance, tStates, isContended);
-		return;
-	}
-	rInstance.m_Z80Processor.tCount += tStates;
-}
-
-void drawTopBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended)
-{
-	if (rInstance.m_Z80Processor.tCount >= rInstance.m_emulSettings.contentionStart)
+	case TopBlank:
 	{
-		rInstance.m_lastDrawnTState = rInstance.m_emulSettings.contentionStart;
-		rInstance.drawFunc = drawScreen;
-		rInstance.drawFunc(rInstance, tStates, isContended);
-		return;
+		if (m_Z80Processor.tCount >= m_emulSettings.borderStart)
+			m_drawStage = TopBorder; 
+		else
+		{
+			break;
+		}
 	}
-	//for(; rInstance.m_lastDrawnTState < rInstance.m_Z80Processor.tCount; rInstance.m_lastDrawnTState++) *rInstance.m_pDrawBuffer++ = rInstance.m_colorLookup[rInstance.m_outPortFE.borderColor];
-	rInstance.m_Z80Processor.tCount += tStates;
-}
-
-void drawScreen(ZXSpectrum& rInstance, int32_t tStates, bool isContended)
-{
-	if (rInstance.m_Z80Processor.tCount <= rInstance.m_emulSettings.contentionEnd)
+	case TopBorder:
 	{
-		if (isContended) rInstance.m_Z80Processor.tCount += contPattern[(rInstance.m_Z80Processor.tCount - rInstance.m_emulSettings.contentionStart) % rInstance.m_emulSettings.tStatesPerLine];
-		rInstance.m_Z80Processor.tCount += tStates;
+		if (m_Z80Processor.tCount >= m_emulSettings.contentionStart)
+			m_drawStage = MainScreen;
+		else
+		{
+			//drawTopBorder
+			break;
+		}
 	}
-	else
+	case MainScreen:
 	{
-		rInstance.drawFunc = drawBottomBorder;
-		rInstance.drawFunc(rInstance, tStates, false);
+		if (m_Z80Processor.tCount > m_emulSettings.contentionEnd)
+			m_drawStage = BottomBorder;
+		else
+		{
+			//drawMiddle
+			if (isContended) m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine];
+			break;
+		}
 	}
-
-}
-
-void drawBottomBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended)
-{
-	if (rInstance.m_Z80Processor.tCount > rInstance.m_emulSettings.borderEnd)
+	case BottomBorder:
 	{
-		rInstance.drawFunc = drawBottomBlank;
-		rInstance.drawFunc(rInstance, tStates, false);
-		return;
+		if (m_Z80Processor.tCount >= m_emulSettings.borderEnd)
+			m_drawStage = BottomBlank;
+		else
+		{
+			//drawBottomBorder
+			break;
+		}
 	}
-	//*rInstance.m_pDrawBuffer++ = rInstance.m_colorLookup[rInstance.m_outPortFE.borderColor]; 
-	rInstance.m_Z80Processor.tCount += tStates;
+	case BottomBlank:
+	default:
+		break;
+	}
+	m_Z80Processor.tCount += tStates;
+	//if (isContended && m_Z80Processor.tCount >= m_emulSettings.contentionStart && m_Z80Processor.tCount <= m_emulSettings.contentionEnd) 
+	//	m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine]; 
+	//m_Z80Processor.tCount += tStates;
 }
-
-void drawBottomBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended)
-{
-	rInstance.m_Z80Processor.tCount += tStates;
-}
-
-//void drawTopBlank(ZXSpectrum* pInstance, int32_t tStates, bool isContended)
+//void ZXSpectrum::drawFunc(int32_t tStates, bool isContended)
 //{
-//	if (pInstance->m_Z80Processor.tCount >= pInstance->m_emulSettings.borderStart)
+//	static bool flag = false;
+//	int32_t currTStates = m_Z80Processor.tCount;
+//	switch (m_drawStage)
 //	{
-//		pInstance->drawFunc = drawTopBorder;
-//		pInstance->drawFunc(pInstance, tStates, isContended);
-//		return;
-//	}
-//	pInstance->m_Z80Processor.tCount += tStates;
-//}
-//
-//void drawTopBorder(ZXSpectrum* pInstance, int32_t tStates, bool isContended)
-//{
-//	if (pInstance->m_Z80Processor.tCount >= pInstance->m_emulSettings.contentionStart)
+//	case TopBlank:
 //	{
-//		pInstance->drawFunc = drawScreen;
-//		pInstance->drawFunc(pInstance, tStates, isContended);
-//		return;
+//		if (currTStates + tStates >= m_emulSettings.borderStart)
+//		{
+//			int32_t tStatesToBorder = m_emulSettings.borderStart - currTStates;
+//			//DBG_PRINTF("Border start: %d MustBe:%d From=%d, Add=%d, ToBorder=%d\n", m_emulSettings.borderStart, currTStates + tStates, currTStates, tStates, tStatesToBorder);
+//			currTStates = m_Z80Processor.tCount += tStatesToBorder;
+//			tStates -= tStatesToBorder;
+//			//DBG_PRINTF("              New=%d, Remain=%d\n", currTStates, tStates);
+//			//flag = true;
+//			m_drawStage = TopBorder;
+//		}
+//		else
+//		{
+//			m_Z80Processor.tCount += tStates;
+//			break;
+//		}
 //	}
-//	//*rInstance.m_pDrawBuffer++ = rInstance.m_colorLookup[rInstance.m_outPortFE.borderColor]; 
-//	pInstance->m_Z80Processor.tCount += tStates;
-//}
-//
-//void drawScreen(ZXSpectrum* pInstance, int32_t tStates, bool isContended)
-//{
-//	if (pInstance->m_Z80Processor.tCount <= pInstance->m_emulSettings.contentionEnd)
+//	case TopBorder:
 //	{
-//		if (isContended) pInstance->m_Z80Processor.tCount += contPattern[(pInstance->m_Z80Processor.tCount - pInstance->m_emulSettings.contentionStart) % pInstance->m_emulSettings.tStatesPerLine];
-//		pInstance->m_Z80Processor.tCount += tStates;
+//		if (currTStates + tStates >= m_emulSettings.contentionStart)
+//		{
+//			int32_t tStatesToMainScreen = m_emulSettings.contentionStart - currTStates;
+//			currTStates = m_Z80Processor.tCount += tStatesToMainScreen;
+//			tStates -= tStatesToMainScreen;
+//			m_drawStage = MainScreen;
+//		}
+//		else
+//		{
+//			//drawTopBorder
+//			m_Z80Processor.tCount += tStates;
+//			break;
+//		}
 //	}
-//	else
+//	case MainScreen:
 //	{
-//		pInstance->drawFunc = drawBottomBorder;
-//		pInstance->drawFunc(pInstance, tStates, false);
+//		if (currTStates + tStates >= m_emulSettings.contentionEnd)
+//		{
+//			int32_t tStatesToBorder = m_emulSettings.contentionEnd - currTStates;
+//			m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine];
+//			currTStates = m_Z80Processor.tCount += tStatesToBorder;
+//			tStates -= tStatesToBorder;
+//			m_drawStage = BottomBorder;
+//		}
+//		else
+//		{
+//			//drawMiddle
+////			DBG_PRINTF("Contention: %d-%d, CurrState: % d\n", m_emulSettings.contentionStart, m_emulSettings.contentionEnd, m_Z80Processor.tCount);
+//			m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine];
+//			m_Z80Processor.tCount += tStates;
+//			break;
+//		}
 //	}
-//
-//}
-//
-//void drawBottomBorder(ZXSpectrum* pInstance, int32_t tStates, bool isContended)
-//{
-//	if (pInstance->m_Z80Processor.tCount > pInstance->m_emulSettings.borderEnd)
+//	case BottomBorder:
 //	{
-//		pInstance->drawFunc = drawBottomBlank;
-//		pInstance->drawFunc(pInstance, tStates, false);
-//		return;
+//		if (currTStates + tStates >= m_emulSettings.borderEnd)
+//		{
+//			int32_t tStatesToBlank = m_emulSettings.borderEnd - currTStates;
+//			currTStates = m_Z80Processor.tCount += tStatesToBlank;
+//			tStates -= tStatesToBlank;
+//			m_drawStage = BottomBlank;
+//		}
+//		else
+//		{
+//			//drawBottomBorder
+//			m_Z80Processor.tCount += tStates;
+//			break;
+//		}
 //	}
-//	//*rInstance.m_pDrawBuffer++ = rInstance.m_colorLookup[rInstance.m_outPortFE.borderColor]; 
-//	pInstance->m_Z80Processor.tCount += tStates;
-//}
-//
-//void drawBottomBlank(ZXSpectrum* pInstance, int32_t tStates, bool isContended)
-//{
-//	pInstance->m_Z80Processor.tCount += tStates;
-//}
-//
-//void ZXSpectrum::processULA(uint16_t addressOnBus, uint32_t tStates)
-//{
-//	drawFunc(*this, tStates, m_pageContended[addressOnBus >> 14]);
-//	//if (m_pageContended[addressOnBus >> 14])
+//	case BottomBlank:
+//	default:
+//		m_Z80Processor.tCount += tStates;
+//		break;
+//	}
+//	//m_Z80Processor.tCount += tStates;
+//	//if (flag)
 //	//{
-//	//	if (m_Z80Processor.tCount >= m_emulSettings.contentionStart && m_Z80Processor.tCount <= m_emulSettings.contentionEnd) m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine];
+//	//	DBG_PRINTF("              result=%d\n\n", m_Z80Processor.tCount);
+//	//	flag = false;
 //	//}
-//	//if (m_Z80Processor.tCount >= m_emulSettings.contentionStart && m_Z80Processor.tCount <= m_emulSettings.contentionEnd) 
-//	//	drawScreen(*this, tStates, m_pageContended[addressOnBus >> 14]);
-//	//else
-//	//	m_Z80Processor.tCount += tStates;
+//	//if (isContended && m_Z80Processor.tCount >= m_emulSettings.contentionStart && m_Z80Processor.tCount <= m_emulSettings.contentionEnd) 
+//	//	m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine]; 
+//	//m_Z80Processor.tCount += tStates;
 //}

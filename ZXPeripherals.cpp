@@ -373,7 +373,7 @@ Display::~Display()
 
 bool Display::init()
 {
-    if ((m_pDMABuffer = (uint16_t*)calloc(320, sizeof(uint16_t))) == NULL) { DBG_PRINTLN("Error allocating DMA buffer"); return m_initComplete; };
+    if ((m_pDMABuffer = (uint16_t*)calloc(320 * 2, sizeof(uint16_t))) == NULL) { DBG_PRINTLN("Error allocating DMA buffer"); return m_initComplete; };
     m_pio = pio0;
     if ((m_pioSM = pio_claim_unused_sm(m_pio, false)) < 0)
     {

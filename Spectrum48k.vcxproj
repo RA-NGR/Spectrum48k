@@ -103,6 +103,7 @@
     <ClInclude Include="ROM128-0.h" />
     <ClInclude Include="ROM128-1.h" />
     <ClInclude Include="ROM48.h" />
+    <ClInclude Include="TestROM.h" />
     <ClInclude Include="ZXMacros.h" />
     <ClInclude Include="ZXPeripherals.h" />
     <ClInclude Include="ZXSpectrum.h" />

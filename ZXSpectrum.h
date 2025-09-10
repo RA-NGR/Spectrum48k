@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "ZXMacros.h"
 #include "ZXPeripherals.h"
+#include "TestROM.h"
 #include "ROM48.h"
 #include "ROM128-0.h"
 #include "ROM128-1.h"
@@ -309,23 +310,6 @@ const uint8_t __attribute__((section(".time_critical." "tables"))) contPattern[2
 class ZXSpectrum
 {
 private:
-// New way
-	//void processULA(uint16_t addressOnBus, uint32_t tStates);
-	void (*drawFunc)(ZXSpectrum&, int32_t, bool);
-	friend void drawTopBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-	friend void drawTopBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-	friend void drawScreen(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-	friend void drawBottomBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-	friend void drawBottomBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-	//void (*drawFunc)(ZXSpectrum*, int32_t, bool);
-	//friend void drawTopBlank(ZXSpectrum* pInstance, int32_t tStates, bool isContended);
-	//friend void drawTopBorder(ZXSpectrum* pInstance, int32_t tStates, bool isContended);
-	//friend void drawScreen(ZXSpectrum* pInstance, int32_t tStates, bool isContended);
-	//friend void drawBottomBorder(ZXSpectrum* pInstance, int32_t tStates, bool isContended);
-	//friend void drawBottomBlank(ZXSpectrum* pInstance, int32_t tStates, bool isContended);
-	uint32_t* m_pDrawBuffer, *m_pDrawBufferEnd;
-	int32_t m_lastDrawnTState;
-	//int32_t m_lastBorderTState, m_lastScreenTState;
 	// Processor
 	typedef union
 	{
@@ -413,7 +397,6 @@ private:
 			uint8_t unused : 2;
 		};
 		uint8_t rawData;
-		uint8_t lastData;
 	} m_outPort7FFD;
 	uint8_t m_outPortFFFD;
 	uint8_t m_virtualRegsAY[16];
@@ -423,18 +406,29 @@ private:
 	void setMemPageAddr(uint32_t page, uint8_t* ptr) { m_pRAMPages[page] = ptr - (page << 14); };
 	inline uint8_t* memoryAddress(uint32_t address) { return address + m_pRAMPages[address >> 14]; };
 	inline uint8_t* screenAddress(uint32_t address) { return address + m_pRAMBanks[5 + ((m_outPort7FFD.screen & !m_outPort7FFD.disabled) << 1)]; };
-	void /*__attribute__((section(".time_critical." "writeMem")))*/ writeMem(uint16_t address, uint8_t data);
-	uint8_t __attribute__((section(".time_critical." "readMem"))) readMem(uint16_t address);
+	inline void writeMem(uint16_t address, uint8_t data);
+	inline uint8_t readMem(uint16_t address);
 	uint8_t __attribute__((section(".time_critical." "unattachedPort"))) unattachedPort();
 	void __attribute__((section(".time_critical." "writePort"))) writePort(uint16_t port, uint8_t data);
 	uint8_t __attribute__((section(".time_critical." "readPort"))) readPort(uint16_t port);
+// New way
+	enum DrawStage
+	{
+		TopBlank = 0,
+		TopBorder,
+		MainScreen,
+		BottomBorder,
+		BottomBlank
+	};
+	DrawStage m_drawStage;
+	inline void /*__attribute__((section(".scratch_x." "drawFunc")))*/ drawFunc(int32_t tStates, bool isContended);
 // Graphics out
+	const uint32_t m_colorLookup[16] = { 0x00000000, 0x15001500, 0x00A800A8, 0x15A815A8, 0x60056005, 0x75057505, 0x60AD60AD, 0x75AD75AD,
+										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
 	//const uint32_t m_colorLookup[16] = { 0x00000000, 0x17001700, 0x00B800B8, 0x17B817B8, 0xE005E005, 0xF705F705, 0xE0BDE0BD, 0xF7BDF7BD,
 	//									 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
 	//const uint32_t m_colorLookup[16] = { 0x00000000, 0x15001500, 0x00A800A8, 0x15A815A8, 0x60056005, 0x75057505, 0x60AD60AD, 0x75AD75AD,
 	//									 0x00000000, 0x1B001B00, 0x00D800D8, 0x1BD81BD8, 0x00070007, 0x1B071B07, 0x00DF00DF, 0x1BDF1BDF };
-	const uint32_t m_colorLookup[16] = { 0x00000000, 0x15001500, 0x00A800A8, 0x15A815A8, 0x60056005, 0x75057505, 0x60AD60AD, 0x75AD75AD,
-										 0x00000000, 0x1F001F00, 0x00F800F8, 0x1FF81FF8, 0xE007E007, 0xFF07FF07, 0xE0FFE0FF, 0xFFFFFFFF };
 	const uint32_t m_colorInvertMask[2] = { 0x00, 0xFF };
 	const uint32_t m_pixelBitMask[4] = { 0x00000000, 0xFFFF0000, 0x0000FFFF, 0xFFFFFFFF };
 	const uint16_t m_pixelsMemOffset[240] = { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF,
@@ -531,11 +525,11 @@ public:
 	bool toggleDebug();// { m_debugActvie = !m_debugActvie; return m_debugActvie; }
 };
 
-void __attribute__((section(".time_critical." "drawTopBlank")))		drawTopBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-void __attribute__((section(".time_critical." "drawTopBorder")))	drawTopBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-void __attribute__((section(".time_critical." "drawScreen")))		drawScreen(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-void __attribute__((section(".time_critical." "drawBottomBorder")))	drawBottomBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
-void __attribute__((section(".time_critical." "drawBottomBlank")))	drawBottomBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
+//void __attribute__((section(".time_critical." "drawTopBlank")))		drawTopBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
+//void __attribute__((section(".time_critical." "drawTopBorder")))	drawTopBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
+//void __attribute__((section(".time_critical." "drawScreen")))		drawScreen(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
+//void __attribute__((section(".time_critical." "drawBottomBorder")))	drawBottomBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
+//void __attribute__((section(".time_critical." "drawBottomBlank")))	drawBottomBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
 
 //void drawTopBlank(ZXSpectrum& rInstance, int32_t tStates, bool isContended);
 //void drawTopBorder(ZXSpectrum& rInstance, int32_t tStates, bool isContended);

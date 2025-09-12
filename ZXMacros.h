@@ -78,7 +78,6 @@
 //#define contendedAccess(address, time)                  { if (m_pageContended[address >> 14] && m_Z80Processor.tCount >= m_emulSettings.contentionStart && m_Z80Processor.tCount <= m_emulSettings.contentionEnd) m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine]; m_Z80Processor.tCount += (time); }
 #define contendedAccess(address, time)                  { drawFunc((time), m_pageContended[address >> 14]); }
 #define contendedAccessLoop(address, time)              { if (m_pageContended[address >> 14]) { for (int i = 0; i < (time); i++) drawFunc(1, true); } else drawFunc((time), false); }
-//#define addressOnBus(address, time)                     { for (int i = 0; i < (time); i++) drawFunc(1, m_pageContended[address >> 14]); }
 
 
 #define AND(value)                                      { A &= (value); FL = FLAG_H | sz53pTable[A]; Q = FL; }

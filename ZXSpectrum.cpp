@@ -1389,18 +1389,6 @@ void ZXSpectrum::writeMem(uint16_t address, uint8_t data)
 		uint8_t oldData = *memoryAddress(address);
 		*memoryAddress(address) = data;
 		if (address >> 15) return;
-		//uint16_t posY = m_Z80Processor.tCount / m_emulSettings.tStatesPerLine, posX = (m_Z80Processor.tCount % m_emulSettings.tStatesPerLine) / 4;
-		//if (posY < SCREENOFFSET + 24 || posX > 31) return;
-		//if (/*((address - 0x4000 >= m_pixelsMemOffset[posY - SCREENOFFSET] + posX) && (address - 0x4000 < m_pixelsMemOffset[posY - SCREENOFFSET] + 32)) ||*/ 
-		//	((address - 0x4000 >= m_attributesMemOffset[posY - SCREENOFFSET]) && (address - 0x4000 <= m_attributesMemOffset[posY - SCREENOFFSET] + posX)))
-		//{
-		//	//DBG_PRINTF("T: %6d X: %2d Y: %3d addr:%04X\n", m_Z80Processor.tCount, posX, posY - SCREENOFFSET, address - 0x4000);
-		//	struct MemoryChange memChng;
-		//	memChng.x = address - 0x4000 - m_attributesMemOffset[posY - SCREENOFFSET];//posX;
-		//	memChng.y = posY / 8;
-		//	memChng.value = oldData;
-		//	m_videoMemChange.putData(memChng);
-		//}
 	}
 }
 
@@ -1774,97 +1762,4 @@ void ZXSpectrum::drawFunc(int32_t tStates, bool isContended)
 		break;
 	}
 	m_Z80Processor.tCount += tStates;
-	//if (isContended && m_Z80Processor.tCount >= m_emulSettings.contentionStart && m_Z80Processor.tCount <= m_emulSettings.contentionEnd) 
-	//	m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine]; 
-	//m_Z80Processor.tCount += tStates;
 }
-//void ZXSpectrum::drawFunc(int32_t tStates, bool isContended)
-//{
-//	static bool flag = false;
-//	int32_t currTStates = m_Z80Processor.tCount;
-//	switch (m_drawStage)
-//	{
-//	case TopBlank:
-//	{
-//		if (currTStates + tStates >= m_emulSettings.borderStart)
-//		{
-//			int32_t tStatesToBorder = m_emulSettings.borderStart - currTStates;
-//			//DBG_PRINTF("Border start: %d MustBe:%d From=%d, Add=%d, ToBorder=%d\n", m_emulSettings.borderStart, currTStates + tStates, currTStates, tStates, tStatesToBorder);
-//			currTStates = m_Z80Processor.tCount += tStatesToBorder;
-//			tStates -= tStatesToBorder;
-//			//DBG_PRINTF("              New=%d, Remain=%d\n", currTStates, tStates);
-//			//flag = true;
-//			m_drawStage = TopBorder;
-//		}
-//		else
-//		{
-//			m_Z80Processor.tCount += tStates;
-//			break;
-//		}
-//	}
-//	case TopBorder:
-//	{
-//		if (currTStates + tStates >= m_emulSettings.contentionStart)
-//		{
-//			int32_t tStatesToMainScreen = m_emulSettings.contentionStart - currTStates;
-//			currTStates = m_Z80Processor.tCount += tStatesToMainScreen;
-//			tStates -= tStatesToMainScreen;
-//			m_drawStage = MainScreen;
-//		}
-//		else
-//		{
-//			//drawTopBorder
-//			m_Z80Processor.tCount += tStates;
-//			break;
-//		}
-//	}
-//	case MainScreen:
-//	{
-//		if (currTStates + tStates >= m_emulSettings.contentionEnd)
-//		{
-//			int32_t tStatesToBorder = m_emulSettings.contentionEnd - currTStates;
-//			m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine];
-//			currTStates = m_Z80Processor.tCount += tStatesToBorder;
-//			tStates -= tStatesToBorder;
-//			m_drawStage = BottomBorder;
-//		}
-//		else
-//		{
-//			//drawMiddle
-////			DBG_PRINTF("Contention: %d-%d, CurrState: % d\n", m_emulSettings.contentionStart, m_emulSettings.contentionEnd, m_Z80Processor.tCount);
-//			m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine];
-//			m_Z80Processor.tCount += tStates;
-//			break;
-//		}
-//	}
-//	case BottomBorder:
-//	{
-//		if (currTStates + tStates >= m_emulSettings.borderEnd)
-//		{
-//			int32_t tStatesToBlank = m_emulSettings.borderEnd - currTStates;
-//			currTStates = m_Z80Processor.tCount += tStatesToBlank;
-//			tStates -= tStatesToBlank;
-//			m_drawStage = BottomBlank;
-//		}
-//		else
-//		{
-//			//drawBottomBorder
-//			m_Z80Processor.tCount += tStates;
-//			break;
-//		}
-//	}
-//	case BottomBlank:
-//	default:
-//		m_Z80Processor.tCount += tStates;
-//		break;
-//	}
-//	//m_Z80Processor.tCount += tStates;
-//	//if (flag)
-//	//{
-//	//	DBG_PRINTF("              result=%d\n\n", m_Z80Processor.tCount);
-//	//	flag = false;
-//	//}
-//	//if (isContended && m_Z80Processor.tCount >= m_emulSettings.contentionStart && m_Z80Processor.tCount <= m_emulSettings.contentionEnd) 
-//	//	m_Z80Processor.tCount += contPattern[(m_Z80Processor.tCount - m_emulSettings.contentionStart) % m_emulSettings.tStatesPerLine]; 
-//	//m_Z80Processor.tCount += tStates;
-//}

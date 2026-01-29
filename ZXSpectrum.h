@@ -403,9 +403,9 @@ private:
 	uint8_t m_defaultPortVal = 0xFF;
 	uint8_t* m_pInPorts;
 	void setMachineType(bool is128 = false);
-	void setMemPageAddr(uint32_t page, uint8_t* ptr) { m_pRAMPages[page] = ptr - (page << 14); };
-	inline uint8_t* memoryAddress(uint32_t address) { return address + m_pRAMPages[address >> 14]; };
-	inline uint8_t* screenAddress(uint32_t address) { return address + m_pRAMBanks[5 + ((m_outPort7FFD.screen & !m_outPort7FFD.disabled) << 1)]; };
+	void setMemPageAddr(uint32_t page, uint8_t* ptr) { m_pRAMPages[page] = ptr/* - (page << 14)*/; };
+	inline uint8_t* memoryAddress(uint32_t address) { return (address & 0x3FFF) + m_pRAMPages[address >> 14]; };
+	inline uint8_t* screenAddress(uint32_t address) { return (address & 0x3FFF) + m_pRAMBanks[5 + ((m_outPort7FFD.screen & !m_outPort7FFD.disabled) << 1)]; };
 	inline void writeMem(uint16_t address, uint8_t data);
 	inline uint8_t readMem(uint16_t address);
 	inline uint8_t fetchOpcode(uint16_t address);

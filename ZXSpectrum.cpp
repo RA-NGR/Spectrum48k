@@ -78,7 +78,13 @@ void ZXSpectrum::stepZ80()
 		case ADD_HL_RR:						/*+*/
 		{
 			addressOnBus(IR, 7);
-			ADD16((*(uint16_t*)(pCurrentPairs[HL_IX_IY_INDEX])), (*(uint16_t*)(pCurrentPairs[dd(opcode)])));
+			//ADD16((*(uint16_t*)(pCurrentPairs[HL_IX_IY_INDEX])), (*(uint16_t*)(pCurrentPairs[dd(opcode)])));
+			uint32_t add16temp = (*(uint16_t*)(pCurrentPairs[HL_IX_IY_INDEX])) + (*(uint16_t*)(pCurrentPairs[dd(opcode)]));
+			uint8_t lookup = (((*(uint16_t*)(pCurrentPairs[HL_IX_IY_INDEX])) & 0x0800) >> 11) | (((*(uint16_t*)(pCurrentPairs[dd(opcode)])) & 0x0800) >> 10) | ((add16temp & 0x0800) >> 9);
+			m_Z80Processor.memptr.w = (*(uint16_t*)(pCurrentPairs[HL_IX_IY_INDEX])) + 1;
+			(*(uint16_t*)(pCurrentPairs[HL_IX_IY_INDEX])) = add16temp;
+			FL = (FL & (FLAG_V | FLAG_Z | FLAG_S)) | (add16temp & 0x10000 ? FLAG_C : 0) | ((add16temp >> 8) & (FLAG_3 | FLAG_5)) | halfcarryAddTable[lookup]; 
+			Q = FL;
 			break;
 		}
 		case DEC_8:				/*!*/
@@ -607,14 +613,23 @@ void ZXSpectrum::stepZ80()
 		case ADC_HL_RR:
 		{
 			addressOnBus(IR, 7);
-			ADC16((*(uint16_t*)(pCurrentPairs[dd(opcode)])));
-			break;
-			break;
+			//ADC16((*(uint16_t*)(pCurrentPairs[dd(opcode)])));
+			uint32_t add16temp = HL + (*(uint16_t*)(pCurrentPairs[dd(opcode)])) + (FL & FLAG_C);
+			uint8_t lookup = ((HL & 0x8800) >> 11) | (((*(uint16_t*)(pCurrentPairs[dd(opcode)])) & 0x8800) >> 10) | ((add16temp & 0x8800) >> 9);
+			m_Z80Processor.memptr.w = HL + 1; 
+			HL = add16temp; 
+			FL = (add16temp & 0x10000 ? FLAG_C : 0) | overflowAddTable[lookup >> 4] | (H & (FLAG_3 | FLAG_5 | FLAG_S)) | halfcarryAddTable[lookup & 0x07] | (HL ? 0 : FLAG_Z); Q = FL;			break;
 		}
 		case SBC_HL_RR:
 		{
 			addressOnBus(IR, 7);
-			SBC16((*(uint16_t*)(pCurrentPairs[dd(opcode)])));
+			//SBC16((*(uint16_t*)(pCurrentPairs[dd(opcode)])));
+			uint32_t sub16temp = HL - (*(uint16_t*)(pCurrentPairs[dd(opcode)])) - (FL & FLAG_C);
+			uint8_t lookup = ((HL & 0x8800) >> 11) | (((*(uint16_t*)(pCurrentPairs[dd(opcode)])) & 0x8800) >> 10) | ((sub16temp & 0x8800) >> 9);
+			m_Z80Processor.memptr.w = HL + 1; 
+			HL = sub16temp; 
+			FL = (sub16temp & 0x10000 ? FLAG_C : 0) | FLAG_N | overflowSubTable[lookup >> 4] | (H & (FLAG_3 | FLAG_5 | FLAG_S)) | halfcarrySubTable[lookup & 0x07] | (HL ? 0 : FLAG_Z); 
+			Q = FL;
 			break;
 		}
 		case DAA:
@@ -1075,7 +1090,10 @@ void ZXSpectrum::stepZ80()
 		case RST_P:
 		{
 			addressOnBus(IR, 1);
-			RST(rstTable[r(opcode)]);
+			//RST(rstTable[r(opcode)]);
+			PUSH16(PCL, PCH);
+			PC = rstTable[r(opcode)];
+			m_Z80Processor.memptr.w = PC;
 			break;
 		}
 		case IN_A_N:

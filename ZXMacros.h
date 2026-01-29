@@ -78,7 +78,6 @@
 #define contendedAccess(address, time) { drawFunc((time), m_pageContended[address >> 14]); }
 #define addressOnBus(address, time)    { if (m_pageContended[address >> 14]) { for (int i = 0; i < (time); i++) drawFunc(1, true); } else drawFunc((time), false); }
 
-
 #define AND(value)                     { A &= (value); FL = FLAG_H | sz53pTable[A]; Q = FL; }
 #define ADC(value)                     { uint16_t adctemp = A + (value) + ( FL & FLAG_C ); uint8_t lookup = ((A & 0x88) >> 3) | (((value) & 0x88) >> 2) | ((adctemp & 0x88) >> 1); \
                                          A = adctemp; FL = (adctemp & 0x100 ? FLAG_C : 0) | halfcarryAddTable[lookup & 0x07] | overflowAddTable[lookup >> 4] | sz53Table[A]; \

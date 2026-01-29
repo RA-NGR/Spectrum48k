@@ -36,7 +36,7 @@ void setup()
 {
 	vreg_set_voltage(VREG_VOLTAGE_1_30);
 	delay(10);
-	set_sys_clock_khz(280000, false);
+	set_sys_clock_khz(285000, false);
 #if defined(DBG)
 	Serial.begin(115200);
 	delay(1000);

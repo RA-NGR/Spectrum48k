@@ -315,16 +315,16 @@ private:
 	{
 		struct { uint8_t l, h; } b; // Little Endian
 		uint16_t w;
-	} pair;
+	} pair_t;
 	struct Z80 {
-		pair af, bc, de, hl;
-		pair af_, bc_, de_, hl_;
-		pair ix, iy;
+		pair_t af, bc, de, hl;
+		pair_t af_, bc_, de_, hl_;
+		pair_t ix, iy;
 		uint8_t i;
 		uint8_t r;
 		uint8_t r7;
-		pair sp, pc;
-		pair memptr;
+		pair_t sp, pc;
+		pair_t memptr;
 		uint8_t iff2_read, iff1, iff2, im;
 		uint8_t q;
 		uint32_t halted;
@@ -408,6 +408,7 @@ private:
 	inline uint8_t* screenAddress(uint32_t address) { return address + m_pRAMBanks[5 + ((m_outPort7FFD.screen & !m_outPort7FFD.disabled) << 1)]; };
 	inline void writeMem(uint16_t address, uint8_t data);
 	inline uint8_t readMem(uint16_t address);
+	inline uint8_t fetchOpcode(uint16_t address);
 	uint8_t __attribute__((section(".time_critical." "unattachedPort"))) unattachedPort();
 	void __attribute__((section(".time_critical." "writePort"))) writePort(uint16_t port, uint8_t data);
 	uint8_t __attribute__((section(".time_critical." "readPort"))) readPort(uint16_t port);

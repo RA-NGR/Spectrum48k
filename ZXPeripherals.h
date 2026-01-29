@@ -151,9 +151,11 @@ public:
 	void drawBuffer(uint16_t bufferSize);
 	void setAddrWindow(uint16_t startX, uint16_t startY, uint16_t endX, uint16_t endY);
 	void writeData16(uint16_t data) { m_pio->txf[m_pioSM] = (data); m_pio->fdebug = m_pullStallMask; while (!(m_pio->fdebug & m_pullStallMask)); };
+	void pushPair(uint32_t twoPixels);
 private:
 	bool m_initComplete = false;
 	uint16_t* m_pDMABuffer;
+	uint32_t* m_pTwoPixelsBufferPos, *m_pTwoPixelsBufferEnd;
 	PIO m_pio = 0;
 	int m_pioSM = -1;
 	uint32_t m_pioInstrSetDC = 0;

@@ -373,7 +373,8 @@ Display::~Display()
 
 bool Display::init()
 {
-    if ((m_pDMABuffer = (uint16_t*)calloc(320 * 2, sizeof(uint16_t))) == NULL) { DBG_PRINTLN("Error allocating DMA buffer"); return m_initComplete; };
+    if ((m_pDMABuffer = (uint16_t*)calloc(320, sizeof(uint16_t))) == NULL) { DBG_PRINTLN("Error allocating DMA buffer"); return m_initComplete; };
+    m_pTwoPixelsBufferPos = (uint32_t*)m_pDMABuffer; m_pTwoPixelsBufferEnd = (uint32_t*)m_pDMABuffer + 160;
     m_pio = pio0;
     if ((m_pioSM = pio_claim_unused_sm(m_pio, false)) < 0)
     {
@@ -451,4 +452,14 @@ void Display::setAddrWindow(uint16_t startX, uint16_t startY, uint16_t endX, uin
     writeData(pData[1]); 
     writeData(pData[0]);
     writeCommand(0x2C);
+}
+
+void Display::pushPair(uint32_t twoPixels)
+{
+    *m_pTwoPixelsBufferPos++ = twoPixels;
+    if (m_pTwoPixelsBufferPos >= m_pTwoPixelsBufferEnd)
+    {
+        m_pTwoPixelsBufferPos = (uint32_t*)m_pDMABuffer;
+        drawBuffer(320);
+    }
 }
